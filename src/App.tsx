@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, RefObject, FormEvent, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Sliders, RotateCcw, Stars, MapPin, Github, Linkedin, Facebook, ChevronDown, ExternalLink, Calendar, Award, BookOpen, Cpu, Server, Wrench, Mail, Send, Check, Copy } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 import TechLogo from "./components/TechLogo";
 import StarCursorTrail from "./components/StarCursorTrail";
 
@@ -1392,6 +1393,9 @@ export default function App() {
         </a>
 
       </div>
+
+      {/* Vercel Analytics tracking */}
+      <Analytics />
     </div>
   );
 }
