@@ -165,80 +165,83 @@ const BackgroundVideo = ({
   setVideoLoading,
   setVideoError
 }: BackgroundVideoProps) => {
-  const [scrollY, setScrollY] = useState(0);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    let ticking = false;
     const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
-          ticking = false;
-        });
-        ticking = true;
-      }
+      const el = containerRef.current;
+      if (!el) return;
+      const scrollY = window.scrollY;
+      const currentHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+      const scrollFactor = Math.max(0, 1 - scrollY / (currentHeight || 800));
+      el.style.opacity = scrollFactor.toString();
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const currentHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const dynamicVideoOpacity = Math.max(0, videoOpacity * (1 - scrollY / (currentHeight || 800)));
 
   return (
     <>
       {loadVideo && videoUrl && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: loaderActive ? 0 : dynamicVideoOpacity }}
-          transition={{ duration: 1.5 }}
+        <div
+          ref={containerRef}
           className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden z-[2]"
           style={{
             filter: `blur(${videoBlur}px)`,
           }}
         >
-          {isIframeUrl(videoUrl) ? (
-            <iframe
-              src={getEmbedUrl(videoUrl)}
-              frameBorder="0"
-              allow="autoplay; fullscreen; picture-in-picture"
-              referrerPolicy="strict-origin-when-cross-origin"
-              className="absolute pointer-events-none"
-              style={{
-                width: '100vw',
-                height: '56.25vw',
-                minHeight: '100vh',
-                minWidth: '177.77vh',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -46%) scale(1.12)',
-              }}
-              title="Kling Generative background video player"
-              onLoad={() => setVideoLoading(false)}
-            />
-          ) : (
-            <video
-              ref={videoRef}
-              src={videoUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              onLoadStart={() => setVideoLoading(true)}
-              onCanPlay={() => {
-                setVideoLoading(false);
-                if (videoRef.current) {
-                  videoRef.current.playbackRate = videoSpeed;
-                }
-              }}
-              onError={() => {
-                setVideoLoading(false);
-                setVideoError("Unable to stream this video file. Ensure it is a direct MP4/WebM URL.");
-              }}
-              className="w-full h-full object-cover scale-[1.10] origin-top"
-            />
-          )}
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: loaderActive ? 0 : videoOpacity }}
+            transition={{ duration: 1.5 }}
+            className="w-full h-full"
+          >
+            {isIframeUrl(videoUrl) ? (
+              <iframe
+                src={getEmbedUrl(videoUrl)}
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="absolute pointer-events-none"
+                style={{
+                  width: '100vw',
+                  height: '56.25vw',
+                  minHeight: '100vh',
+                  minWidth: '177.77vh',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -46%) scale(1.12)',
+                }}
+                title="Kling Generative background video player"
+                onLoad={() => setVideoLoading(false)}
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                onLoadStart={() => setVideoLoading(true)}
+                onCanPlay={() => {
+                  setVideoLoading(false);
+                  if (videoRef.current) {
+                    videoRef.current.playbackRate = videoSpeed;
+                  }
+                }}
+                onError={() => {
+                  setVideoLoading(false);
+                  setVideoError("Unable to stream this video file. Ensure it is a direct MP4/WebM URL.");
+                }}
+                className="w-full h-full object-cover scale-[1.10] origin-top"
+              />
+            )}
+          </motion.div>
+        </div>
       )}
     </>
   );
@@ -250,24 +253,27 @@ interface ScrollPromptProps {
 }
 
 const ScrollPrompt = ({ hasInteracted, currentHeight }: ScrollPromptProps) => {
-  const [scrollY, setScrollY] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    let ticking = false;
+    if (window.scrollY >= 100) {
+      setIsVisible(false);
+    }
+
     const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
-          ticking = false;
-        });
-        ticking = true;
+      const scrollY = window.scrollY;
+      if (scrollY >= 100) {
+        setIsVisible((prev) => (prev ? false : prev));
+      } else {
+        setIsVisible((prev) => (!prev ? true : prev));
       }
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  if (scrollY >= 100) return null;
+  if (!isVisible) return null;
 
   return (
     <>
@@ -496,24 +502,11 @@ export default function App() {
       };
     };
 
-    // Main Canvas Render Loop — capped at 30fps to halve GPU draw calls.
-    // The parallax drift is imperceptible above 30fps for a background element.
-    const TARGET_FPS = 30;
-    const FRAME_INTERVAL = 1000 / TARGET_FPS;
-    let lastTime = 0;
+    // Main Canvas Render Loop running at native display refresh rate for buttery scroll parallax sync.
     let isPageVisible = !document.hidden;
 
-    const render = (timestamp: number) => {
+    const render = () => {
       if (!isPageVisible) return; // Pause entirely when tab is backgrounded
-
-      const elapsed = timestamp - lastTime;
-      if (elapsed < FRAME_INTERVAL) {
-        // Not enough time has passed — skip this frame but keep the loop alive
-        animationFrameId = requestAnimationFrame(render);
-        return;
-      }
-      // Snap lastTime to a multiple of the interval to prevent drift accumulation
-      lastTime = timestamp - (elapsed % FRAME_INTERVAL);
 
       // Clear dark cosmos background
       ctx.fillStyle = activeTheme.bgStart;
@@ -619,7 +612,6 @@ export default function App() {
     const handleVisibilityChange = () => {
       isPageVisible = !document.hidden;
       if (isPageVisible) {
-        lastTime = 0; // Reset timer so next frame isn't skipped
         animationFrameId = requestAnimationFrame(render);
       } else {
         cancelAnimationFrame(animationFrameId);

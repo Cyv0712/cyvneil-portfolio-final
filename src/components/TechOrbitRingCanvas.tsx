@@ -151,7 +151,7 @@ export default function TechOrbitRingCanvas() {
           p.angle += p.speed;
         });
 
-        const steps = 120;
+        const steps = 60;
         const pts: Array<{ x: number; y: number; z: number }> = [];
 
         // Project the continuous ring circle path in 3D space

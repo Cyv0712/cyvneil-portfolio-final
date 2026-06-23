@@ -121,17 +121,19 @@ export default function StarCursorTrail() {
         }
 
         ctx.save();
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
-        
-        // Add a subtle glow to each star
-        ctx.shadowBlur = p.size * 1.5;
-        ctx.shadowColor = p.color;
-
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
 
+        // Add a subtle glow to each star using a fast, hardware-accelerated low-opacity circle instead of expensive canvas shadowBlur
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha * 0.15;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
         // Draw 4-point star for clean, modern cosmic look
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
         drawStar(ctx, 0, 0, 4, p.size, p.size / 2.5);
 
         ctx.restore();
