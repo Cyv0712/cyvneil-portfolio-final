@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Bebas Neue", sans-serif;
+}
+
+/* Animated glowing Rainbow Border effect only for the Customize Scene button wrapper */
+.rainbow-border-button {
+  position: relative;
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff, #ff0000);
+  background-size: 400% 400%;
+  animation: rainbow-animation 6s linear infinite;
+}
+
+.rainbow-border-button::after {
+  content: '';
+  position: absolute;
+  top: -3px; bottom: -3px; left: -3px; right: -3px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff, #ff0000);
+  background-size: 400% 400%;
+  animation: rainbow-animation 6s linear infinite;
+  opacity: 0.55;
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+@keyframes rainbow-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+

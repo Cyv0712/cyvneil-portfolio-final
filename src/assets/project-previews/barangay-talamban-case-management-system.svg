@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+  <defs>
+    <linearGradient id="gov-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="60%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#1e3a8a" />
+    </linearGradient>
+    <linearGradient id="yellow-btn" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Blue Gradient -->
+  <rect width="1200" height="675" fill="url(#gov-bg)" />
+
+  <!-- Abstract design elements from screenshot: circles -->
+  <circle cx="40" cy="140" r="20" fill="#eab308" fill-opacity="0.85" />
+  <circle cx="1120" cy="210" r="25" fill="#3b82f6" fill-opacity="0.8" />
+  
+  <!-- Subtle line waves in background representing civic unity -->
+  <path d="M-100,500 Q 300,300 700,550 T 1300,450" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.06" />
+  <path d="M-100,530 Q 300,330 700,580 T 1300,480" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.04" />
+
+  <!-- Top Navigation Header -->
+  <rect width="1200" height="75" fill="#1e40af" fill-opacity="0.4" />
+  <g transform="translate(64, 46)">
+    <!-- Simulated Barangay Seal Shield -->
+    <path d="M -15,-15 L 0,-24 L 15,-15 L 12,6 C 8,16 0,22 0,22 C 0,22 -8,16 -12,6 Z" fill="#eab308" />
+    <path d="M -12,-13 L 0,-21 L 12,-13 L 9,5 C 6,13 0,19 0,19 C 0,19 -6,13 -9,5 Z" fill="#1d4ed8" />
+    <circle cx="0" cy="1" r="5" fill="#facc15" />
+    <text x="28" y="0" font-family="'Inter', -apple-system, sans-serif" font-weight="800" font-size="12.5" fill="#ffffff" letter-spacing="0.5">BARANGAY TALAMBAN</text>
+    <text x="28" y="14" font-family="'Inter', -apple-system, sans-serif" font-weight="600" font-size="10" fill="#93c5fd">Case Management System</text>
+
+    <!-- Language Selector -->
+    <g transform="translate(260, -5)">
+      <rect width="95" height="28" rx="6" fill="#1d4ed8" fill-opacity="0.5" stroke="#3b82f6" stroke-width="1" />
+      <!-- Globe icon -->
+      <circle cx="15" cy="14" r="5" fill="none" stroke="#93c5fd" stroke-width="1" />
+      <line x1="10" y1="14" x2="20" y2="14" stroke="#93c5fd" stroke-width="1" />
+      <text x="27" y="18" font-family="'Inter', sans-serif" font-size="10.5" font-weight="600" fill="#ffffff">English ▾</text>
+    </g>
+  </g>
+
+  <!-- Header Right Actions -->
+  <g transform="translate(1136, 46)" text-anchor="end">
+    <!-- File as Guest -->
+    <rect x="-370" y="-12" width="112" height="30" rx="6" fill="none" stroke="#60a5fa" stroke-width="1" />
+    <text x="-314" y="7" font-family="'Inter', sans-serif" font-size="10.5" font-weight="700" fill="#ffffff" text-anchor="middle">FILE AS GUEST</text>
+    
+    <!-- Sign In -->
+    <rect x="-242" y="-12" width="68" height="30" rx="6" fill="none" stroke="#60a5fa" stroke-width="1" />
+    <text x="-208" y="7" font-family="'Inter', sans-serif" font-size="10.5" font-weight="700" fill="#ffffff" text-anchor="middle">SIGN IN</text>
+
+    <!-- Register Button (Yellow) -->
+    <rect x="-158" y="-14" width="85" height="34" rx="6" fill="url(#yellow-btn)" />
+    <text x="-1155" y="7" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#1e3a8a">REGISTER</text>
+  </g>
+
+  <!-- Big Central Message -->
+  <g transform="translate(150, 220)">
+    <text x="450" y="50" font-family="'Inter', -apple-system, sans-serif" font-weight="800" font-size="44" fill="#ffffff" text-anchor="middle">Welcome to</text>
+    
+    <text x="450" y="115" font-family="'Inter', -apple-system, sans-serif" font-weight="900" font-size="52" fill="#facc15" text-anchor="middle" letter-spacing="-0.5">Barangay Talamban Case</text>
+    <text x="450" y="175" font-family="'Inter', -apple-system, sans-serif" font-weight="900" font-size="52" fill="#facc15" text-anchor="middle" letter-spacing="-0.5">Management System (CMS)</text>
+
+    <text x="450" y="240" font-family="'Inter', -apple-system, sans-serif" font-weight="600" font-size="17" fill="#ffffff" fill-opacity="0.9" text-anchor="middle" letter-spacing="0.1">Easily file cases and stay updated with our online case management</text>
+    <text x="450" y="268" font-family="'Inter', -apple-system, sans-serif" font-weight="600" font-size="17" fill="#ffffff" fill-opacity="0.9" text-anchor="middle" letter-spacing="0.1">system. Get help, track progress, and connect with your barangay — all in</text>
+    <text x="450" y="296" font-family="'Inter', -apple-system, sans-serif" font-weight="600" font-size="17" fill="#ffffff" fill-opacity="0.9" text-anchor="middle" letter-spacing="0.1">one place.</text>
+  </g>
+</svg>

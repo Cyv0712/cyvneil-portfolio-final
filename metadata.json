@@ -1,0 +1,6 @@
+{
+  "name": "Developer Hero Section",
+  "description": "A pixel-perfect, responsive canvas containing an elegant starry night sky starfield with modern text gradients and custom animations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
