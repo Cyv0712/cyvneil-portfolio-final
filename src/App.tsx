@@ -421,6 +421,8 @@ export default function App() {
 
   // --- Starfield Initialization & Loop ---
   useEffect(() => {
+    if (loaderActive) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -628,7 +630,7 @@ export default function App() {
       resizeObserver.disconnect();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [starCount, twinkleSpeedFactor, parallaxStrength, shootingStarRate, activeTheme]);
+  }, [starCount, twinkleSpeedFactor, parallaxStrength, shootingStarRate, activeTheme, loaderActive]);
 
   // --- Reset to original custom portfolio defaults ---
   const handleResetDefaults = () => {
@@ -707,61 +709,45 @@ export default function App() {
             {/* The grid of 7 vertical black rectangular shutters covering the viewport */}
             <div className="absolute inset-0 grid grid-cols-7 w-full h-full gap-0 pointer-events-none z-10 font-display">
               {Array.from({ length: 7 }).map((_, index) => {
-                const delay = index * 0.16; // 160ms stagger per rectangle creates a spectacular sweeping curtain effect
+                const panelDelay = index * 0.16; // 160ms stagger per rectangle creates a spectacular sweeping curtain effect
 
                 return (
                   <div key={index} className="relative w-full h-full overflow-hidden">
-                    <AnimatePresence>
-                      {loaderActive && (
-                        <motion.div
-                          initial={{ y: 0 }}
-                          exit={{
-                            y: "100%",
-                            transition: {
-                              duration: 0.95,
-                              ease: [0.76, 0, 0.24, 1],
-                              delay: delay
-                            }
-                          }}
-                          className="absolute inset-0 bg-black"
-                        />
-                      )}
-                    </AnimatePresence>
+                    <div
+                      className={`loader-shutter flex items-center justify-center ${!loaderActive ? "exit" : ""}`}
+                      style={{
+                        transitionDelay: `${panelDelay}s`
+                      }}
+                    >
+                      <div
+                        className="absolute top-0 h-full flex items-center justify-center select-none px-6"
+                        style={{
+                          width: "100vw",
+                          left: `${index * (-100 / 7)}vw`
+                        }}
+                      >
+                        <div className="flex items-center justify-center gap-3 sm:gap-5 md:gap-7">
+                          {Array.from("CYVNEIL").map((letter, letterIndex) => {
+                            const letterDelay = letterIndex * 0.16;
+
+                            return (
+                              <span
+                                key={letterIndex}
+                                className="inline-block text-[clamp(3.75rem,12vw,9rem)] font-bold leading-none text-white drop-shadow-[0_15px_45px_rgba(0,0,0,0.6)] loader-letter"
+                                style={{
+                                  animationDelay: `${letterDelay}s`
+                                }}
+                              >
+                                {letter}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
-            </div>
-
-            {/* Centered big name display panel */}
-            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none px-6">
-              <div className="flex items-center justify-center font-display select-none gap-3 sm:gap-5 md:gap-7">
-                <AnimatePresence>
-                  {loaderActive && Array.from("CYVNEIL").map((letter, index) => {
-                    const delay = index * 0.16;
-
-                    return (
-                      <div key={index} className="relative w-auto h-auto flex items-center justify-center">
-                        <motion.span
-                          initial={{ opacity: 0, y: 50 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{
-                            y: "100vh",
-                            transition: {
-                              duration: 0.95,
-                              ease: [0.76, 0, 0.24, 1],
-                              delay: delay
-                            }
-                          }}
-                          transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-                          className="inline-block text-6xl sm:text-8xl md:text-[9rem] font-bold leading-none text-white drop-shadow-[0_15px_45px_rgba(0,0,0,0.6)]"
-                        >
-                          {letter}
-                        </motion.span>
-                      </div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
             </div>
           </motion.div>
         )}
@@ -851,7 +837,7 @@ export default function App() {
           {/* Left Column: Tech Matrix Blueprint & Education Info */}
           <div className="lg:col-span-5 flex flex-col gap-6 w-full">
             <Suspense fallback={<CanvasLoader />}>
-              <TechMatrixCanvas />
+              {!loaderActive && <TechMatrixCanvas />}
             </Suspense>
 
             {/* Elegant Education Block */}
@@ -1037,7 +1023,7 @@ export default function App() {
           {/* Right Column: Quantum Orbital Gyroscope canvas - shown last on mobile */}
           <div className="lg:col-span-5 flex justify-center items-center order-last lg:order-none">
             <Suspense fallback={<CanvasLoader />}>
-              <TechOrbitRingCanvas />
+              {!loaderActive && <TechOrbitRingCanvas />}
             </Suspense>
           </div>
         </div>
@@ -1045,12 +1031,12 @@ export default function App() {
 
       {/* ------------------- SECTION 4: MY JOURNEY (GSAP SCROLL TIMELINE) ------------------- */}
       <Suspense fallback={<SectionLoader />}>
-        <MyJourneyTimeline />
+        {!loaderActive && <MyJourneyTimeline />}
       </Suspense>
 
       {/* ------------------- SECTION 5: CUSTOM INTERACTIVE PROJECTS DIRECTORY ------------------- */}
       <Suspense fallback={<SectionLoader />}>
-        <TechProjectsSection />
+        {!loaderActive && <TechProjectsSection />}
       </Suspense>
 
       {/* ------------------- SECTION 6: CONTACT & COMMISSION DETAILS ------------------- */}
