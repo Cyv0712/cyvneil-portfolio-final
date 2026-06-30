@@ -42,6 +42,7 @@
 
 /* Hide scrollbar globally while keeping scrolling functional */
 html, body {
+  background-color: #000000;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
