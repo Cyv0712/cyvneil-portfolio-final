@@ -273,7 +273,7 @@ const BackgroundVideo = ({
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture"
                 referrerPolicy="strict-origin-when-cross-origin"
-                loading="lazy"
+                loading="eager"
                 className="absolute pointer-events-none"
                 style={{
                   width: '100vw',
@@ -295,7 +295,7 @@ const BackgroundVideo = ({
                 loop
                 muted
                 playsInline
-                preload="metadata"
+                preload="auto"
                 onLoadStart={() => setVideoLoading(true)}
                 onCanPlay={() => {
                   setVideoLoading(false);
@@ -425,7 +425,7 @@ export default function App() {
   // --- Immersive Custom Initial Loader States ---
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [loaderActive, setLoaderActive] = useState<boolean>(true);
-  const [loadVideo, setLoadVideo] = useState<boolean>(false);
+  const [loadVideo, setLoadVideo] = useState<boolean>(() => !performanceProfile.disableAutoplayVideo);
 
   useEffect(() => {
     // 1. Force stateful scroll lock on body during intro loader sequences
