@@ -101,12 +101,13 @@ export default function TechMatrixCanvas() {
 
     const handleResize = () => {
       const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      const isLowPowerViewport = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
+      const dpr = Math.min(window.devicePixelRatio || 1, isLowPowerViewport ? 1.25 : 1.75);
       width = rect.width;
       height = rect.height;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     const resizeObserver = new ResizeObserver(() => handleResize());

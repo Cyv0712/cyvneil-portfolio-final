@@ -50,6 +50,17 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
 
+/* Adaptive visual fallbacks for devices where blur/backdrop compositing is costly. */
+.low-power-visuals .backdrop-blur-md {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.low-power-visuals [class*="blur-["],
+.low-power-visuals .blur-3xl {
+  filter: blur(40px) !important;
+}
+
 /* GPU-accelerated CSS transition for shutters */
 .loader-shutter {
   position: absolute;

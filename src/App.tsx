@@ -120,6 +120,74 @@ const VIDEO_PRESETS: VideoPreset[] = [
   }
 ];
 
+const DEFAULT_VIMEO_URL = VIDEO_PRESETS[0].url;
+const LIGHTWEIGHT_VIDEO_URL = VIDEO_PRESETS[1].url;
+
+interface PerformanceProfile {
+  isLowPower: boolean;
+  prefersReducedMotion: boolean;
+  saveData: boolean;
+  isCoarsePointer: boolean;
+  maxCanvasDpr: number;
+  defaultStarCount: number;
+  defaultParallaxStrength: number;
+  defaultShootingStarRate: number;
+  defaultVideoUrl: string;
+  defaultVideoId: string;
+  disableAutoplayVideo: boolean;
+  enableCursorTrail: boolean;
+}
+
+const getPerformanceProfile = (): PerformanceProfile => {
+  if (typeof window === "undefined") {
+    return {
+      isLowPower: false,
+      prefersReducedMotion: false,
+      saveData: false,
+      isCoarsePointer: false,
+      maxCanvasDpr: 2,
+      defaultStarCount: 250,
+      defaultParallaxStrength: 15,
+      defaultShootingStarRate: 45,
+      defaultVideoUrl: DEFAULT_VIMEO_URL,
+      defaultVideoId: "kling-vimeo",
+      disableAutoplayVideo: false,
+      enableCursorTrail: true,
+    };
+  }
+
+  const nav = navigator as Navigator & {
+    connection?: {
+      saveData?: boolean;
+      effectiveType?: string;
+    };
+    deviceMemory?: number;
+  };
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const saveData = Boolean(nav.connection?.saveData);
+  const slowConnection = /2g/.test(nav.connection?.effectiveType ?? "");
+  const lowMemory = typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4;
+  const lowCoreCount = navigator.hardwareConcurrency <= 4;
+  const narrowViewport = window.innerWidth < 768;
+  const isLowPower = prefersReducedMotion || saveData || slowConnection || isCoarsePointer || lowMemory || lowCoreCount || narrowViewport;
+
+  return {
+    isLowPower,
+    prefersReducedMotion,
+    saveData,
+    isCoarsePointer,
+    maxCanvasDpr: isLowPower ? 1.25 : 1.75,
+    defaultStarCount: isLowPower ? 120 : 250,
+    defaultParallaxStrength: isLowPower ? 8 : 15,
+    defaultShootingStarRate: isLowPower ? 75 : 45,
+    defaultVideoUrl: isLowPower ? LIGHTWEIGHT_VIDEO_URL : DEFAULT_VIMEO_URL,
+    defaultVideoId: isLowPower ? "space-nebula" : "kling-vimeo",
+    disableAutoplayVideo: prefersReducedMotion || saveData,
+    enableCursorTrail: !isLowPower,
+  };
+};
+
 // --- Embed / Video Link Utilities ---
 const isIframeUrl = (url: string) => {
   return url.includes("vimeo.com") || url.includes("youtube.com") || url.includes("<iframe") || url.includes("player.");
@@ -190,7 +258,7 @@ const BackgroundVideo = ({
           ref={containerRef}
           className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden z-[2]"
           style={{
-            filter: `blur(${videoBlur}px)`,
+            filter: videoBlur > 0 ? `blur(${Math.min(videoBlur, 4)}px)` : "none",
           }}
         >
           <motion.div
@@ -205,6 +273,7 @@ const BackgroundVideo = ({
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture"
                 referrerPolicy="strict-origin-when-cross-origin"
+                loading="lazy"
                 className="absolute pointer-events-none"
                 style={{
                   width: '100vw',
@@ -226,6 +295,7 @@ const BackgroundVideo = ({
                 loop
                 muted
                 playsInline
+                preload="metadata"
                 onLoadStart={() => setVideoLoading(true)}
                 onCanPlay={() => {
                   setVideoLoading(false);
@@ -320,20 +390,21 @@ interface ShootingStar {
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [performanceProfile] = useState<PerformanceProfile>(() => getPerformanceProfile());
 
   // --- Configuration State ---
   const [activeTheme, setActiveTheme] = useState<ThemeConfig>(THEME_PRESETS[0]);
-  const [starCount, setStarCount] = useState<number>(250);
+  const [starCount, setStarCount] = useState<number>(performanceProfile.defaultStarCount);
   const [twinkleSpeedFactor, setTwinkleSpeedFactor] = useState<number>(1);
-  const [parallaxStrength, setParallaxStrength] = useState<number>(15);
-  const [shootingStarRate, setShootingStarRate] = useState<number>(45); // lower is more frequent, 0 is disabled
+  const [parallaxStrength, setParallaxStrength] = useState<number>(performanceProfile.defaultParallaxStrength);
+  const [shootingStarRate, setShootingStarRate] = useState<number>(performanceProfile.defaultShootingStarRate); // lower is more frequent, 0 is disabled
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
   const [showConfig, setShowConfig] = useState<boolean>(false);
 
-  // --- Custom Video Overrides (using Kling AI vimeo as the absolute master default) ---
-  const [videoUrl, setVideoUrl] = useState<string>("https://player.vimeo.com/video/1203015100?badge=0&autopause=0&player_id=0&app_id=58479");
-  const [activeVideoId, setActiveVideoId] = useState<string>("kling-vimeo");
-  const [videoOpacity, setVideoOpacity] = useState<number>(0.55); // blended mode by default! Looks amazing
+  // --- Custom Video Overrides ---
+  const [videoUrl, setVideoUrl] = useState<string>(performanceProfile.defaultVideoUrl);
+  const [activeVideoId, setActiveVideoId] = useState<string>(performanceProfile.defaultVideoId);
+  const [videoOpacity, setVideoOpacity] = useState<number>(performanceProfile.isLowPower ? 0.38 : 0.55);
   const [videoBlur, setVideoBlur] = useState<number>(0);
   const [videoSpeed, setVideoSpeed] = useState<number>(1.0);
   const [videoLoading, setVideoLoading] = useState<boolean>(false);
@@ -354,9 +425,7 @@ export default function App() {
   // --- Immersive Custom Initial Loader States ---
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [loaderActive, setLoaderActive] = useState<boolean>(true);
-  // Start video loading immediately on mount so Vimeo gets maximum buffer time
-  // before the 4.5s loader animation finishes revealing the page
-  const [loadVideo, setLoadVideo] = useState<boolean>(true);
+  const [loadVideo, setLoadVideo] = useState<boolean>(false);
 
   useEffect(() => {
     // 1. Force stateful scroll lock on body during intro loader sequences
@@ -370,6 +439,7 @@ export default function App() {
     // 3. Complete initial loader and unlock core page flow
     const finalTimer = setTimeout(() => {
       setInitialLoading(false);
+      setLoadVideo(!performanceProfile.disableAutoplayVideo);
       document.body.style.overflow = "";
     }, 4500);
 
@@ -378,7 +448,7 @@ export default function App() {
       clearTimeout(finalTimer);
       document.body.style.overflow = "";
     };
-  }, []);
+  }, [performanceProfile.disableAutoplayVideo]);
 
 
 
@@ -459,14 +529,14 @@ export default function App() {
     };
 
     const handleResize = () => {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, performanceProfile.maxCanvasDpr);
       const rect = canvas.getBoundingClientRect();
       width = rect.width;
       height = rect.height;
 
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       initStars(width, height);
     };
@@ -482,6 +552,16 @@ export default function App() {
 
     const handleScroll = () => {
       scrollYRef.current = window.scrollY;
+      const nextHeroNearViewport = !performanceProfile.isLowPower || window.scrollY < window.innerHeight * 1.25;
+      if (nextHeroNearViewport !== isHeroNearViewport) {
+        isHeroNearViewport = nextHeroNearViewport;
+        if (isHeroNearViewport) {
+          scheduleRender();
+        } else {
+          cancelAnimationFrame(animationFrameId);
+          isFrameScheduled = false;
+        }
+      }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
 
@@ -506,9 +586,12 @@ export default function App() {
 
     // Main Canvas Render Loop running at native display refresh rate for buttery scroll parallax sync.
     let isPageVisible = !document.hidden;
+    let isHeroNearViewport = !performanceProfile.isLowPower || window.scrollY < window.innerHeight * 1.25;
+    let isFrameScheduled = false;
 
     const render = () => {
-      if (!isPageVisible) return; // Pause entirely when tab is backgrounded
+      isFrameScheduled = false;
+      if (!isPageVisible || !isHeroNearViewport) return; // Pause when hidden, and below the hero on low-power devices
 
       // Clear dark cosmos background
       ctx.fillStyle = activeTheme.bgStart;
@@ -607,6 +690,12 @@ export default function App() {
       }
 
       ctx.globalAlpha = 1.0;
+      scheduleRender();
+    };
+
+    const scheduleRender = () => {
+      if (isFrameScheduled || !isPageVisible || !isHeroNearViewport) return;
+      isFrameScheduled = true;
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -614,14 +703,15 @@ export default function App() {
     const handleVisibilityChange = () => {
       isPageVisible = !document.hidden;
       if (isPageVisible) {
-        animationFrameId = requestAnimationFrame(render);
+        scheduleRender();
       } else {
         cancelAnimationFrame(animationFrameId);
+        isFrameScheduled = false;
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    animationFrameId = requestAnimationFrame(render);
+    scheduleRender();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
@@ -630,21 +720,22 @@ export default function App() {
       resizeObserver.disconnect();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [starCount, twinkleSpeedFactor, parallaxStrength, shootingStarRate, activeTheme, loaderActive]);
+  }, [starCount, twinkleSpeedFactor, parallaxStrength, shootingStarRate, activeTheme, loaderActive, performanceProfile.isLowPower, performanceProfile.maxCanvasDpr]);
 
   // --- Reset to original custom portfolio defaults ---
   const handleResetDefaults = () => {
     setActiveTheme(THEME_PRESETS[0]);
-    setStarCount(250);
+    setStarCount(performanceProfile.defaultStarCount);
     setTwinkleSpeedFactor(1);
-    setParallaxStrength(15);
-    setShootingStarRate(45);
-    setVideoUrl("https://player.vimeo.com/video/1203015100?badge=0&autopause=0&player_id=0&app_id=58479");
-    setActiveVideoId("kling-vimeo");
-    setVideoOpacity(0.55);
+    setParallaxStrength(performanceProfile.defaultParallaxStrength);
+    setShootingStarRate(performanceProfile.defaultShootingStarRate);
+    setVideoUrl(performanceProfile.defaultVideoUrl);
+    setActiveVideoId(performanceProfile.defaultVideoId);
+    setVideoOpacity(performanceProfile.isLowPower ? 0.38 : 0.55);
     setVideoBlur(0);
     setVideoSpeed(1.0);
     setVideoError(null);
+    setLoadVideo(!performanceProfile.disableAutoplayVideo);
   };
 
   // --- Fast helper to assign video presets ---
@@ -653,6 +744,7 @@ export default function App() {
     setVideoLoading(true);
     setActiveVideoId(preset.id);
     setVideoUrl(preset.url);
+    setLoadVideo(true);
   };
 
   const handleCustomVideoSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -664,6 +756,7 @@ export default function App() {
       setVideoLoading(true);
       setActiveVideoId("custom");
       setVideoUrl(url.trim());
+      setLoadVideo(true);
     }
   };
 
@@ -694,7 +787,7 @@ export default function App() {
 
   return (
     <div
-      className="relative w-full min-h-screen overflow-y-auto overflow-x-hidden font-sans select-none scroll-smooth bg-black"
+      className={`relative w-full min-h-screen overflow-y-auto overflow-x-hidden font-sans select-none scroll-smooth bg-black ${performanceProfile.isLowPower ? "low-power-visuals" : ""}`}
       style={{ backgroundColor: activeTheme.bgEnd }}
     >
       {/* 🚀 Immersive Initial Custom Screen-Shutter & Name Loader */}
@@ -760,7 +853,7 @@ export default function App() {
       />
 
       {/* ⭐ Interactive Star-themed Cursor Trail */}
-      <StarCursorTrail />
+      {performanceProfile.enableCursorTrail && <StarCursorTrail />}
 
       {/* 📹 Fixed Background Video Layer (Standard MP4 or Vimeo / YouTube Iframe) */}
       <BackgroundVideo

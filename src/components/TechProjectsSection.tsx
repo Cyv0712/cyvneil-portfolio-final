@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect, MouseEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  Globe, 
-  ArrowUpRight, 
-  Code, 
-  Sparkles, 
-  Eye, 
-  Database, 
-  Lock, 
-  Shield, 
-  Cpu, 
+import {
+  Globe,
+  ArrowUpRight,
+  Code,
+  Sparkles,
+  Eye,
+  Database,
+  Lock,
+  Shield,
+  Cpu,
   ExternalLink,
   Github,
   Award,
@@ -261,8 +261,7 @@ export const projectItems: ProjectItem[] = [
 
 export default function TechProjectsSection() {
   const [activeHoverId, setActiveHoverId] = useState<string | null>(null);
-  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
-  
+
   // Track selected project for detailed inspector blueprint popup modal
   const [inspectProject, setInspectProject] = useState<ProjectItem | null>(null);
 
@@ -278,18 +277,34 @@ export default function TechProjectsSection() {
   }, [inspectProject]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
   const rectRef = useRef<DOMRect | null>(null);
-  
+  const hoverPositionRef = useRef({ x: 0, y: 0 });
+  const hoverFrameRef = useRef<number | null>(null);
+
+  const syncPreviewPosition = () => {
+    hoverFrameRef.current = null;
+    const preview = previewRef.current;
+    if (!preview) return;
+
+    preview.style.left = `${hoverPositionRef.current.x + 25}px`;
+    preview.style.top = `${hoverPositionRef.current.y - 120}px`;
+  };
+
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     if (!rectRef.current) {
       rectRef.current = containerRef.current.getBoundingClientRect();
     }
     const rect = rectRef.current;
-    setHoverPosition({
+    hoverPositionRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
-    });
+    };
+
+    if (hoverFrameRef.current === null) {
+      hoverFrameRef.current = requestAnimationFrame(syncPreviewPosition);
+    }
   };
 
   useEffect(() => {
@@ -301,6 +316,9 @@ export default function TechProjectsSection() {
     return () => {
       window.removeEventListener("scroll", clearCache);
       window.removeEventListener("resize", clearCache);
+      if (hoverFrameRef.current !== null) {
+        cancelAnimationFrame(hoverFrameRef.current);
+      }
     };
   }, []);
 
@@ -309,7 +327,7 @@ export default function TechProjectsSection() {
   };
 
   return (
-    <section 
+    <section
       id="custom-projects-section"
       ref={containerRef}
       onMouseMove={handleMouseMove}
@@ -326,26 +344,29 @@ export default function TechProjectsSection() {
           if (!activeProj) return null;
           return (
             <motion.div
+              ref={previewRef}
               initial={{ opacity: 0, scale: 0.94, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 15 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
               className="absolute pointer-events-none hidden lg:flex z-50 w-90 h-60 rounded-xl border border-white/15 bg-[#09090c] overflow-hidden shadow-2xl flex-col justify-between"
               style={{
-                left: hoverPosition.x + 25,
-                top: hoverPosition.y - 120,
+                left: 0,
+                top: 0,
                 boxShadow: `0 25px 60px -12px ${activeProj.preview.glow || 'rgba(0,0,0,0.6)'}, 0 4px 12px rgba(0,0,0,0.9)`
               }}
             >
               {/* Upper Section: Unobscured Thumbnail Image */}
               <div className="relative w-full flex-grow bg-black/60 overflow-hidden select-none">
-                <img 
-                  src={activeProj.preview.image} 
-                  alt={activeProj.title} 
-                  className="absolute inset-0 w-full h-full object-cover opacity-95 transition-transform duration-500 z-0" 
+                <img
+                  src={activeProj.preview.image}
+                  alt={activeProj.title}
+                  className="absolute inset-0 w-full h-full object-cover opacity-95 transition-transform duration-500 z-0"
                   referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
                 />
-                
+
                 {/* Clean HUD corner target graphics over thumbnail */}
                 <div className="absolute inset-2 border border-white/[0.08] rounded-md pointer-events-none flex flex-col justify-between p-1.5">
                   <div className="flex justify-between">
@@ -370,7 +391,7 @@ export default function TechProjectsSection() {
                     <span className="text-gray-400 text-[8px] block">{activeProj.preview.domain}</span>
                   </div>
                   <div className="bg-black/65 backdrop-blur-md px-2 py-0.5 rounded border border-white/10 text-right space-y-0.5">
-                    <span className="block text-gray-500 text-[8px] uppercase">SYS_LOG::{activeProj.slug.substring(0,6)}</span>
+                    <span className="block text-gray-500 text-[8px] uppercase">SYS_LOG::{activeProj.slug.substring(0, 6)}</span>
                     <div className="flex items-center gap-1 justify-end">
                       <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
                       <span className="text-emerald-400 font-bold block text-[8px]">ONLINE</span>
@@ -395,7 +416,7 @@ export default function TechProjectsSection() {
                   <span className="text-[10px] text-gray-400 block truncate mt-0.5">{activeProj.organization}</span>
                 </div>
                 <div className="text-right">
-                  <span 
+                  <span
                     className="px-2 py-1 rounded text-[8px] font-bold tracking-widest uppercase select-none bg-white/5 border text-white transition-opacity duration-300"
                     style={{ borderColor: `${activeProj.preview.accent}40`, color: activeProj.preview.accent }}
                   >
@@ -413,11 +434,8 @@ export default function TechProjectsSection() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/[0.04] pb-6">
           <div className="space-y-2 text-left">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
-              Selected Work
+              Projects
             </h2>
-            <p className="text-xs md:text-sm text-gray-400 max-w-xl">
-              Pristine application development files. Click any record to inspect the complete system blueprints, impact parameters, and codebase references.
-            </p>
             <div className="h-[2px] bg-gradient-to-r from-cyan-400 via-[#84cc16] to-transparent w-40" />
           </div>
         </div>
@@ -441,16 +459,15 @@ export default function TechProjectsSection() {
                     onClick={() => handleRowClick(project)}
                     onMouseEnter={() => setActiveHoverId(project.slug)}
                     onMouseLeave={() => setActiveHoverId(null)}
-                    className={`w-full flex items-center justify-between text-left py-1.5 px-2 rounded-md text-xs font-mono transition-all group ${
-                      activeHoverId === project.slug 
-                        ? "bg-white/5 text-cyan-400" 
+                    className={`w-full flex items-center justify-between text-left py-1.5 px-2 rounded-md text-xs font-mono transition-all group ${activeHoverId === project.slug
+                        ? "bg-white/5 text-cyan-400"
                         : "text-gray-400 hover:text-white hover:bg-white/[0.02]"
-                    }`}
+                      }`}
                   >
                     <span className="truncate pr-2">{project.title}</span>
-                    <span 
+                    <span
                       className="text-[8px] px-1.5 py-0.5 rounded uppercase flex-shrink-0"
-                      style={{ 
+                      style={{
                         backgroundColor: activeHoverId === project.slug ? `${project.preview.accent}15` : 'rgba(255,255,255,0.03)',
                         color: activeHoverId === project.slug ? project.preview.accent : 'rgba(255,255,255,0.4)',
                       }}
@@ -460,21 +477,6 @@ export default function TechProjectsSection() {
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Rotating Telemetry Celestial Globe */}
-            <div className="w-full relative rounded-2xl bg-[#050507]/60 border border-white/[0.03] p-6 flex flex-col items-center justify-center overflow-hidden h-72 group shadow-inner">
-              <div className="absolute inset-3 border border-white/[0.015] rounded-xl pointer-events-none" />
-              <div className="absolute top-4 left-4 flex gap-1 items-center">
-                <span className="w-1 h-1 bg-cyan-400" />
-                <span className="text-[7.5px] font-mono tracking-widest text-cyan-400 uppercase">SYS_ORBITAL_METRICS</span>
-              </div>
-              
-              <RotatingPlanetCanvas />
-
-              <span className="absolute bottom-3 text-[8px] font-mono tracking-widest text-[#84cc16]/50 uppercase text-center mt-2">
-                interactive orbital coordinates
-              </span>
             </div>
           </div>
 
@@ -526,8 +528,8 @@ export default function TechProjectsSection() {
                     </span>
                     <div className="flex flex-wrap md:justify-end gap-1">
                       {project.tech.map((tn) => (
-                        <div 
-                          key={tn} 
+                        <div
+                          key={tn}
                           className="bg-white/5 border border-white/5 rounded px-2.5 py-1 flex items-center gap-1 text-[11px] font-mono text-gray-300"
                         >
                           <TechLogo name={tn} />
@@ -554,7 +556,7 @@ export default function TechProjectsSection() {
         {inspectProject && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 lg:p-8">
             {/* Backdrop Blur overlay */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -563,7 +565,7 @@ export default function TechProjectsSection() {
             />
 
             {/* Main Blueprint Terminal Core */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 30 }}
@@ -587,7 +589,7 @@ export default function TechProjectsSection() {
                   </span>
                 </div>
 
-                <button 
+                <button
                   onClick={() => setInspectProject(null)}
                   className="p-1 rounded bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 >
@@ -597,313 +599,160 @@ export default function TechProjectsSection() {
 
               <div className="overflow-y-auto flex-grow rounded-b-2xl">
                 {/* Dynamic HUD banner */}
-                <div 
+                <div
                   className="w-full py-10 px-6 md:px-10 border-b border-white/5 relative overflow-hidden"
                 >
-                {/* Surface background gradient */}
-                <div 
-                  className="absolute inset-0 opacity-40 z-0" 
-                  style={{ background: inspectProject.preview.surface }}
-                />
-                {/* Caliper overlay */}
-                <div className="absolute inset-3 border border-white/[0.02] rounded-lg pointer-events-none" />
+                  {/* Surface background gradient */}
+                  <div
+                    className="absolute inset-0 opacity-40 z-0"
+                    style={{ background: inspectProject.preview.surface }}
+                  />
+                  {/* Caliper overlay */}
+                  <div className="absolute inset-3 border border-white/[0.02] rounded-lg pointer-events-none" />
 
-                <div className="relative z-10 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span 
-                      className="text-[10px] font-mono uppercase tracking-widest font-bold px-2.5 py-0.5 rounded-md"
-                      style={{ 
-                        backgroundColor: `${inspectProject.preview.accent}15`, 
-                        color: inspectProject.preview.accent,
-                        border: `1px solid ${inspectProject.preview.accent}30`
-                      }}
-                    >
-                      {inspectProject.preview.badge}
-                    </span>
-                    <span className="text-[10px] font-mono text-white/40">{inspectProject.preview.domain}</span>
-                  </div>
-                  <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-white uppercase mt-1">
-                    {inspectProject.title}
-                  </h3>
-                  <p className="text-xs md:text-sm font-mono text-gray-300 mt-2 max-w-2xl leading-relaxed">
-                    "{inspectProject.preview.headline}"
-                  </p>
-                </div>
-              </div>
-
-              {/* Specification Content Layout */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-5 md:p-8">
-                {/* Specs column (Left) */}
-                <div className="md:col-span-7 space-y-6 order-2 md:order-1">
-                  {/* System Overview */}
-                  <div className="space-y-2">
-                    <h4 className="text-[11px] font-mono uppercase tracking-wider text-gray-500 font-bold">
-                      System Description
-                    </h4>
-                    <p className="text-xs md:text-sm text-gray-300 leading-relaxed font-sans">
-                      {inspectProject.description}
+                  <div className="relative z-10 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className="text-[10px] font-mono uppercase tracking-widest font-bold px-2.5 py-0.5 rounded-md"
+                        style={{
+                          backgroundColor: `${inspectProject.preview.accent}15`,
+                          color: inspectProject.preview.accent,
+                          border: `1px solid ${inspectProject.preview.accent}30`
+                        }}
+                      >
+                        {inspectProject.preview.badge}
+                      </span>
+                      <span className="text-[10px] font-mono text-white/40">{inspectProject.preview.domain}</span>
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-white uppercase mt-1">
+                      {inspectProject.title}
+                    </h3>
+                    <p className="text-xs md:text-sm font-mono text-gray-300 mt-2 max-w-2xl leading-relaxed">
+                      "{inspectProject.preview.headline}"
                     </p>
                   </div>
-
-                  {/* Accomplishments & Core Impact bullets */}
-                  <div className="space-y-3">
-                    <h4 className="text-[11px] font-mono uppercase tracking-wider text-gray-500 font-bold">
-                      Core Performance Impact Log
-                    </h4>
-                    <div className="space-y-2.5">
-                      {inspectProject.impact.map((point, i) => (
-                        <div key={i} className="flex gap-2.5 items-start">
-                          <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
-                          <span className="text-xs md:text-sm text-gray-300 leading-relaxed font-sans">
-                            {point}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
-                {/* Ledger Parameters (Right) */}
-                <div className="md:col-span-5 space-y-4 lg:space-y-6 order-1 md:order-2 md:sticky md:top-6 self-start">
-                  {/* Technical Screenshot Preview Mockup */}
-                  <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black/40 aspect-[16/10] group/modal-thumb">
-                    <img
-                      src={inspectProject.preview.image}
-                      alt={inspectProject.title}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/modal-thumb:scale-[1.03]"
-                      referrerPolicy="no-referrer"
-                    />
-                    {/* Cyber decoration calipers */}
-                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/30" />
-                    <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/30" />
-                    <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/30" />
-                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/30" />
-                  </div>
+                {/* Specification Content Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-5 md:p-8">
+                  {/* Specs column (Left) */}
+                  <div className="md:col-span-7 space-y-6 order-2 md:order-1">
+                    {/* System Overview */}
+                    <div className="space-y-2">
+                      <h4 className="text-[11px] font-mono uppercase tracking-wider text-gray-500 font-bold">
+                        System Description
+                      </h4>
+                      <p className="text-xs md:text-sm text-gray-300 leading-relaxed font-sans">
+                        {inspectProject.description}
+                      </p>
+                    </div>
 
-                  {/* Scope Meta info */}
-                  <div className="p-5 rounded-xl bg-white/[0.01]/10 border border-white/5 space-y-3">
-                    <h4 className="text-[11px] font-mono uppercase tracking-wider text-gray-400 font-bold border-b border-white/5 pb-1.5">
-                      Scope Parameters
-                    </h4>
-                    <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-[11px] font-mono">
-                      <div>
-                        <span className="text-gray-500 block uppercase">Role</span>
-                        <span className="text-white font-medium">{inspectProject.role}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 block uppercase">Organization</span>
-                        <span className="text-white font-medium">{inspectProject.organization}</span>
+                    {/* Accomplishments & Core Impact bullets */}
+                    <div className="space-y-3">
+                      <h4 className="text-[11px] font-mono uppercase tracking-wider text-gray-500 font-bold">
+                        Core Performance Impact Log
+                      </h4>
+                      <div className="space-y-2.5">
+                        {inspectProject.impact.map((point, i) => (
+                          <div key={i} className="flex gap-2.5 items-start">
+                            <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                            <span className="text-xs md:text-sm text-gray-300 leading-relaxed font-sans">
+                              {point}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  {/* Compiler stack */}
-                  <div className="space-y-2">
-                    <h4 className="text-[11px] font-mono uppercase tracking-wider text-gray-500 font-bold">
-                      Module Dependents
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {inspectProject.tech.map((tn) => (
-                        <div 
-                          key={tn} 
-                          className="bg-white/5 border border-white/5 rounded px-2.5 py-1 flex items-center gap-1 text-[11px] font-mono text-gray-300"
-                        >
-                          <TechLogo name={tn} />
-                          <span>{tn}</span>
+                  {/* Ledger Parameters (Right) */}
+                  <div className="md:col-span-5 space-y-4 lg:space-y-6 order-1 md:order-2 md:sticky md:top-6 self-start">
+                    {/* Technical Screenshot Preview Mockup */}
+                    <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black/40 aspect-[16/10] group/modal-thumb">
+                      <img
+                        src={inspectProject.preview.image}
+                        alt={inspectProject.title}
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/modal-thumb:scale-[1.03]"
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      {/* Cyber decoration calipers */}
+                      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/30" />
+                      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/30" />
+                      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/30" />
+                      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/30" />
+                    </div>
+
+                    {/* Scope Meta info */}
+                    <div className="p-5 rounded-xl bg-white/[0.01]/10 border border-white/5 space-y-3">
+                      <h4 className="text-[11px] font-mono uppercase tracking-wider text-gray-400 font-bold border-b border-white/5 pb-1.5">
+                        Scope Parameters
+                      </h4>
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-[11px] font-mono">
+                        <div>
+                          <span className="text-gray-500 block uppercase">Role</span>
+                          <span className="text-white font-medium">{inspectProject.role}</span>
                         </div>
-                      ))}
+                        <div>
+                          <span className="text-gray-500 block uppercase">Organization</span>
+                          <span className="text-white font-medium">{inspectProject.organization}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Direct system linkages redirect anchors */}
-                  <div className="flex flex-col gap-2 pt-4 border-t border-white/5">
-                    <a 
-                      href={inspectProject.liveUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="w-full py-2.5 rounded-xl text-center text-xs font-mono font-bold text-black flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
-                      style={{ backgroundColor: inspectProject.preview.accent }}
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>VISIT LIVE SITE</span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </a>
+                    {/* Compiler stack */}
+                    <div className="space-y-2">
+                      <h4 className="text-[11px] font-mono uppercase tracking-wider text-gray-500 font-bold">
+                        Module Dependents
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {inspectProject.tech.map((tn) => (
+                          <div
+                            key={tn}
+                            className="bg-white/5 border border-white/5 rounded px-2.5 py-1 flex items-center gap-1 text-[11px] font-mono text-gray-300"
+                          >
+                            <TechLogo name={tn} />
+                            <span>{tn}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                    {inspectProject.repoUrl && (
-                      <a 
-                        href={inspectProject.repoUrl} 
-                        target="_blank" 
+                    {/* Direct system linkages redirect anchors */}
+                    <div className="flex flex-col gap-2 pt-4 border-t border-white/5">
+                      <a
+                        href={inspectProject.liveUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2.5 rounded-xl text-center text-xs font-mono font-bold text-white bg-white/5 border border-white/10 hover:bg-white/15 hover:border-white/25 flex items-center justify-center gap-1.5 transition-all"
+                        className="w-full py-2.5 rounded-xl text-center text-xs font-mono font-bold text-black flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
+                        style={{ backgroundColor: inspectProject.preview.accent }}
                       >
-                        <Github className="w-4 h-4" />
-                        <span>ACCESS REPOSITORY SOURCE</span>
-                        <Code className="w-3.5 h-3.5 text-gray-400" />
+                        <Globe className="w-4 h-4" />
+                        <span>VISIT LIVE SITE</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
                       </a>
-                    )}
+
+                      {inspectProject.repoUrl && (
+                        <a
+                          href={inspectProject.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2.5 rounded-xl text-center text-xs font-mono font-bold text-white bg-white/5 border border-white/10 hover:bg-white/15 hover:border-white/25 flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <Github className="w-4 h-4" />
+                          <span>ACCESS REPOSITORY SOURCE</span>
+                          <Code className="w-3.5 h-3.5 text-gray-400" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
     </section>
-  );
-}
-
-// Subordinate component: A beautiful animated rotating planet canvas
-function RotatingPlanetCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let id: number;
-    let rotation = 0;
-    
-    const size = 160;
-    canvas.width = size * 2;
-    canvas.height = size * 2;
-    canvas.style.width = `${size}px`;
-    canvas.style.height = `${size}px`;
-    ctx.scale(2, 2);
-
-    const cx = size / 2;
-    const cy = size / 2;
-    const radius = 45;
-
-    const render = () => {
-      if (!isVisible) return;
-      ctx.clearRect(0, 0, size, size);
-      
-      rotation += 0.007;
-
-      // Draw faint orbit ring coordinate calipers
-      ctx.strokeStyle = "rgba(4, 47, 46, 0.2)";
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, 65, 12, Math.PI / 12, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Draw spinning orbital rings
-      ctx.strokeStyle = "rgba(6, 182, 212, 0.4)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, 58, 8, -Math.PI / 8, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Outer atmosphere halo
-      const glowGrad = ctx.createRadialGradient(cx, cy, radius - 3, cx, cy, radius + 15);
-      glowGrad.addColorStop(0, "rgba(6, 182, 212, 0.12)");
-      glowGrad.addColorStop(0.3, "rgba(132, 204, 22, 0.05)");
-      glowGrad.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = glowGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius + 15, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Base shading of the sphere
-      const baseGrad = ctx.createRadialGradient(cx - 10, cy - 10, 5, cx, cy, radius);
-      baseGrad.addColorStop(0, "#0891b2");    // Cyan 600
-      baseGrad.addColorStop(0.4, "#0f172a");  // Slate 900
-      baseGrad.addColorStop(0.85, "#030712"); // Core black
-      baseGrad.addColorStop(1, "#030712");    // Solid black
-      
-      ctx.fillStyle = baseGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Render spinning gaseous grid lines
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.clip(); // Mask within sphere boundary
-      
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-      ctx.lineWidth = 0.75;
-      
-      for (let i = -4; i <= 4; i++) {
-        const offset = Math.sin(rotation + i * 0.4) * 6;
-        const widthY = cy + i * 9 + offset;
-        ctx.beginPath();
-        ctx.moveTo(cx - radius * 1.5, widthY);
-        ctx.lineTo(cx + radius * 1.5, widthY);
-        ctx.stroke();
-      }
-
-      ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
-      for (let j = 0; j < 3; j++) {
-        const angle = rotation + (j * Math.PI) / 3;
-        const widthX = Math.cos(angle) * radius;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, Math.abs(widthX), radius, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      const shadowGrad = ctx.createRadialGradient(cx - radius * 0.2, cy - radius * 0.2, radius * 0.3, cx + radius * 0.1, cy + radius * 0.1, radius);
-      shadowGrad.addColorStop(0, "rgba(0, 0, 0, 0)");
-      shadowGrad.addColorStop(0.7, "rgba(0, 0, 0, 0.4)");
-      shadowGrad.addColorStop(1, "rgba(0, 0, 0, 0.95)");
-      ctx.fillStyle = shadowGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.restore();
-
-      ctx.strokeStyle = "rgba(6, 182, 212, 0.6)";
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, 58, 8, -Math.PI / 8, Math.PI * 0.03, Math.PI * 0.98);
-      ctx.stroke();
-
-      ctx.strokeStyle = "rgba(34, 211, 238, 0.2)";
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(cx - 65, cy - 10);
-      ctx.lineTo(cx - 65, cy + 10);
-      ctx.moveTo(cx + 65, cy - 10);
-      ctx.lineTo(cx + 65, cy + 10);
-      ctx.stroke();
-
-      const radarX = cx + Math.cos(rotation * 1.5) * 60;
-      const radarY = cy + Math.sin(rotation * 1.5) * 15;
-      ctx.strokeStyle = "rgba(34, 211, 238, 0.15)";
-      ctx.lineWidth = 0.4;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(radarX, radarY);
-      ctx.stroke();
-
-      id = requestAnimationFrame(render);
-    };
-
-    let isVisible = true;
-    const observer = new IntersectionObserver(([entry]) => {
-      const wasVisible = isVisible;
-      isVisible = entry.isIntersecting;
-      if (isVisible && !wasVisible) {
-        id = requestAnimationFrame(render);
-      } else if (!isVisible && wasVisible) {
-        cancelAnimationFrame(id);
-      }
-    }, { threshold: 0.05 });
-
-    observer.observe(canvas);
-
-    return () => {
-      cancelAnimationFrame(id);
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <canvas ref={canvasRef} className="block select-none pointer-events-none" />
   );
 }

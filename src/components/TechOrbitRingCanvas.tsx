@@ -80,15 +80,17 @@ export default function TechOrbitRingCanvas() {
     let animFrameId: number;
     let width = 0;
     let height = 0;
+    const isLowPowerViewport = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
+    const ringSteps = isLowPowerViewport ? 32 : 60;
 
     const handleResize = () => {
       const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, isLowPowerViewport ? 1.25 : 1.75);
       width = rect.width;
       height = rect.height;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     const resizeObserver = new ResizeObserver(() => handleResize());
@@ -151,12 +153,11 @@ export default function TechOrbitRingCanvas() {
           p.angle += p.speed;
         });
 
-        const steps = 60;
         const pts: Array<{ x: number; y: number; z: number }> = [];
 
         // Project the continuous ring circle path in 3D space
-        for (let s = 0; s <= steps; s++) {
-          const theta = (s * Math.PI * 2) / steps;
+        for (let s = 0; s <= ringSteps; s++) {
+          const theta = (s * Math.PI * 2) / ringSteps;
           
           // Ring plane coordinate
           let rx = Math.cos(theta) * ring.radius;
@@ -184,7 +185,7 @@ export default function TechOrbitRingCanvas() {
         }
 
         // Segment the continuous orbital ring path into depth segments to handle overlap correctly
-        for (let i = 0; i < steps; i++) {
+        for (let i = 0; i < ringSteps; i++) {
           const p1 = pts[i];
           const p2 = pts[i + 1];
           const segmentZ = (p1.z + p2.z) / 2;
