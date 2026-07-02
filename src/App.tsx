@@ -258,7 +258,7 @@ const BackgroundVideo = ({
           ref={containerRef}
           className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden z-[2]"
           style={{
-            filter: videoBlur > 0 ? `blur(${Math.min(videoBlur, 4)}px)` : "none",
+            filter: videoBlur > 0 ? `blur(${videoBlur}px)` : "none",
           }}
         >
           <motion.div
@@ -404,7 +404,7 @@ export default function App() {
   // --- Custom Video Overrides ---
   const [videoUrl, setVideoUrl] = useState<string>(performanceProfile.defaultVideoUrl);
   const [activeVideoId, setActiveVideoId] = useState<string>(performanceProfile.defaultVideoId);
-  const [videoOpacity, setVideoOpacity] = useState<number>(performanceProfile.isLowPower ? 0.38 : 0.55);
+  const [videoOpacity, setVideoOpacity] = useState<number>(performanceProfile.isLowPower ? 0.05 : 0.10);
   const [videoBlur, setVideoBlur] = useState<number>(0);
   const [videoSpeed, setVideoSpeed] = useState<number>(1.0);
   const [videoLoading, setVideoLoading] = useState<boolean>(false);
@@ -731,7 +731,7 @@ export default function App() {
     setShootingStarRate(performanceProfile.defaultShootingStarRate);
     setVideoUrl(performanceProfile.defaultVideoUrl);
     setActiveVideoId(performanceProfile.defaultVideoId);
-    setVideoOpacity(performanceProfile.isLowPower ? 0.38 : 0.55);
+    setVideoOpacity(performanceProfile.isLowPower ? 0.05 : 0.10);
     setVideoBlur(0);
     setVideoSpeed(1.0);
     setVideoError(null);
@@ -915,7 +915,7 @@ export default function App() {
             className="mt-6 md:mt-8 flex items-center justify-center"
           >
             <span className="text-[11px] md:text-[13px] font-medium tracking-[0.22em] uppercase text-gray-400 font-sans select-none">
-              Full Stack Developer
+              Junior Web Developer
             </span>
           </motion.div>
         </div>
@@ -1411,6 +1411,55 @@ export default function App() {
                     onChange={(e) => setShootingStarRate(parseInt(e.target.value))}
                     className="w-full accent-purple-500 h-1 bg-white/10 rounded-lg cursor-pointer"
                   />
+                </div>
+
+                {/* Background Video Controls */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">Background Video</label>
+                    <input
+                      type="checkbox"
+                      checked={loadVideo}
+                      onChange={(e) => setLoadVideo(e.target.checked)}
+                      className="accent-purple-500 rounded border-white/10 bg-white/5 cursor-pointer w-4 h-4"
+                    />
+                  </div>
+
+                  {loadVideo && (
+                    <>
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">Video Opacity</label>
+                          <span className="text-[10px] font-mono text-purple-300">{Math.round(videoOpacity * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.05"
+                          max="0.9"
+                          step="0.05"
+                          value={videoOpacity}
+                          onChange={(e) => setVideoOpacity(parseFloat(e.target.value))}
+                          className="w-full accent-purple-500 h-1 bg-white/10 rounded-lg cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">Video Blur</label>
+                          <span className="text-[10px] font-mono text-purple-300">{videoBlur}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          step="1"
+                          value={videoBlur}
+                          onChange={(e) => setVideoBlur(parseInt(e.target.value))}
+                          className="w-full accent-purple-500 h-1 bg-white/10 rounded-lg cursor-pointer"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>
