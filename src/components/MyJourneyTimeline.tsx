@@ -198,15 +198,15 @@ export default function MyJourneyTimeline() {
       <div
         id="journey-nodes-timeline-container"
         ref={triggerRef}
-        className="max-w-5xl w-full relative pl-12 md:pl-0"
+        className="max-w-5xl w-full relative pl-16 md:pl-0"
       >
         {/* Central Vertical Timeline Track - Backing Track line */}
-        <div className="absolute left-4 md:left-1/2 md:-translate-x-1/2 top-4 bottom-4 w-[2px] bg-white/[0.03]/5 rounded-full" />
+        <div className="absolute left-8 md:left-1/2 md:-translate-x-1/2 top-4 bottom-4 w-[2px] bg-white/[0.03]/5 rounded-full" />
 
         {/* Dynamic central core colored overlay line which fills up on scroll with GSAP */}
         <div
           ref={lineRef}
-          className="absolute left-4 md:left-1/2 md:-translate-x-1/2 top-4 bottom-4 w-[2px] bg-gradient-to-b from-cyan-400 via-purple-500 to-[#f43f5e] rounded-full origin-top transform scale-y-0 shadow-[0_0_15px_rgba(34,211,238,0.5)] z-0"
+          className="absolute left-8 md:left-1/2 md:-translate-x-1/2 top-4 bottom-4 w-[2px] bg-gradient-to-b from-cyan-400 via-purple-500 to-[#f43f5e] rounded-full origin-top transform scale-y-0 shadow-[0_0_15px_rgba(34,211,238,0.5)] z-0"
         />
 
         <div className="space-y-12 md:space-y-24 w-full relative z-10">
@@ -223,7 +223,7 @@ export default function MyJourneyTimeline() {
                 {/* Visual Connector Ball / Node — on mobile sits at left edge; on md+ sits center */}
                 <div
                   id={`badge-container-${item.id}`}
-                  className="absolute left-0 md:left-1/2 md:-translate-x-1/2 flex items-center justify-center z-20"
+                  className="absolute left-[-52px] md:left-1/2 md:-translate-x-1/2 flex items-center justify-center z-20"
                 >
                   <div
                     id={`badge-${item.id}`}
