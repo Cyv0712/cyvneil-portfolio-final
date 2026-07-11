@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, RefObject, FormEvent, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sliders, RotateCcw, Stars, MapPin, Github, Linkedin, Facebook, ChevronDown, ExternalLink, Calendar, Award, BookOpen, Cpu, Server, Wrench, Mail, Send, Check, Copy } from "lucide-react";
+import { Sliders, RotateCcw, Stars, MapPin, Github, Linkedin, Facebook, ChevronDown, ExternalLink, Award, BookOpen, Cpu, Server, Wrench, Mail, Send, Check, Copy } from "lucide-react";
 import { Analytics } from "@vercel/analytics/react";
 import TechLogo from "./components/TechLogo";
-import StarCursorTrail from "./components/StarCursorTrail";
+import CanvasCursor from "./components/CanvasCursor";
+import gradPic from "./assets/project-previews/grad_pic.svg";
 
 // Lazily load heavy canvas and section components for performance optimization
 const TechMatrixCanvas = lazy(() => import("./components/TechMatrixCanvas"));
@@ -128,6 +129,8 @@ interface PerformanceProfile {
   prefersReducedMotion: boolean;
   saveData: boolean;
   isCoarsePointer: boolean;
+  slowConnection: boolean;
+  useShortIntro: boolean;
   maxCanvasDpr: number;
   defaultStarCount: number;
   defaultParallaxStrength: number;
@@ -145,6 +148,8 @@ const getPerformanceProfile = (): PerformanceProfile => {
       prefersReducedMotion: false,
       saveData: false,
       isCoarsePointer: false,
+      slowConnection: false,
+      useShortIntro: false,
       maxCanvasDpr: 2,
       defaultStarCount: 250,
       defaultParallaxStrength: 15,
@@ -166,24 +171,29 @@ const getPerformanceProfile = (): PerformanceProfile => {
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
   const saveData = Boolean(nav.connection?.saveData);
-  const slowConnection = /2g/.test(nav.connection?.effectiveType ?? "");
+  // Only treat true 2g as a constrained network — do not blanket-disable video for 3g/mobile Wi‑Fi.
+  const slowConnection = (nav.connection?.effectiveType ?? "") === "2g";
   const lowMemory = typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4;
   const lowCoreCount = navigator.hardwareConcurrency <= 4;
   const narrowViewport = window.innerWidth < 768;
   const isLowPower = prefersReducedMotion || saveData || slowConnection || isCoarsePointer || lowMemory || lowCoreCount || narrowViewport;
+  // Short intro only when the session is actually constrained — not every phone.
+  const useShortIntro = prefersReducedMotion || saveData || slowConnection;
 
   return {
     isLowPower,
     prefersReducedMotion,
     saveData,
     isCoarsePointer,
+    slowConnection,
+    useShortIntro,
     maxCanvasDpr: isLowPower ? 1.25 : 1.75,
     defaultStarCount: isLowPower ? 120 : 250,
     defaultParallaxStrength: isLowPower ? 8 : 15,
     defaultShootingStarRate: isLowPower ? 75 : 45,
     defaultVideoUrl: isLowPower ? LIGHTWEIGHT_VIDEO_URL : DEFAULT_VIMEO_URL,
     defaultVideoId: isLowPower ? "space-nebula" : "kling-vimeo",
-    disableAutoplayVideo: prefersReducedMotion || saveData,
+    disableAutoplayVideo: prefersReducedMotion || saveData || slowConnection,
     enableCursorTrail: !isLowPower,
   };
 };
@@ -425,30 +435,101 @@ export default function App() {
   // --- Immersive Custom Initial Loader States ---
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [loaderActive, setLoaderActive] = useState<boolean>(true);
-  const [loadVideo, setLoadVideo] = useState<boolean>(() => !performanceProfile.disableAutoplayVideo);
+  // Video mounts after fonts settle (during brand hold) so it can play when shutters open.
+  const [loadVideo, setLoadVideo] = useState<boolean>(false);
 
   useEffect(() => {
-    // 1. Force stateful scroll lock on body during intro loader sequences
-    document.body.style.overflow = "hidden";
+    let cancelled = false;
+    let shutterTimer: ReturnType<typeof setTimeout> | undefined;
+    let unlockTimer: ReturnType<typeof setTimeout> | undefined;
+    let fontWaitTimer: ReturnType<typeof setTimeout> | undefined;
 
-    // 2. Clear loader state after brief read time
-    const timer = setTimeout(() => {
+    const unlockSite = () => {
+      if (cancelled) return;
       setLoaderActive(false);
-    }, 2200);
-
-    // 3. Complete initial loader and unlock core page flow
-    const finalTimer = setTimeout(() => {
       setInitialLoading(false);
-      setLoadVideo(!performanceProfile.disableAutoplayVideo);
-      document.body.style.overflow = "";
-    }, 4500);
-
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(finalTimer);
+      // Safety: ensure video starts even if shutter path was skipped.
+      beginVideoLoad();
       document.body.style.overflow = "";
     };
-  }, [performanceProfile.disableAutoplayVideo]);
+
+    const beginVideoLoad = () => {
+      if (cancelled || performanceProfile.disableAutoplayVideo) return;
+      setLoadVideo(true);
+    };
+
+    const startShutterSequence = () => {
+      if (cancelled) return;
+
+      // Preload video during the brand hold so it can play as soon as shutters open.
+      // Still opacity-0 while loaderActive; no fight with the initial font race.
+      beginVideoLoad();
+
+      // Constrained sessions only (saveData / 2g) — not every phone.
+      // Reduced motion is handled before the font race below.
+      const shutterMs = performanceProfile.useShortIntro ? 1000 : 2200;
+      const unlockMs = performanceProfile.useShortIntro ? 2000 : 4500;
+
+      shutterTimer = setTimeout(() => {
+        if (cancelled) return;
+        setLoaderActive(false);
+      }, shutterMs);
+
+      unlockTimer = setTimeout(unlockSite, unlockMs);
+    };
+
+    document.body.style.overflow = "hidden";
+
+    // Reduced motion: skip brand wait + font race; unlock almost immediately.
+    if (performanceProfile.prefersReducedMotion) {
+      beginVideoLoad();
+      shutterTimer = setTimeout(() => {
+        if (cancelled) return;
+        setLoaderActive(false);
+      }, 300);
+      unlockTimer = setTimeout(unlockSite, 500);
+      const failsafeTimer = setTimeout(unlockSite, 6000);
+      return () => {
+        cancelled = true;
+        clearTimeout(shutterTimer);
+        clearTimeout(unlockTimer);
+        clearTimeout(failsafeTimer);
+        document.body.style.overflow = "";
+      };
+    }
+
+    // Race branded fonts against a short timeout so slow Google Fonts never leave letters invisible.
+    const FONT_WAIT_MS = 1200;
+    let fontsSettled = false;
+    const beginAfterFonts = () => {
+      if (cancelled || fontsSettled) return;
+      fontsSettled = true;
+      startShutterSequence();
+    };
+
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      document.fonts.ready.then(beginAfterFonts).catch(beginAfterFonts);
+    } else {
+      beginAfterFonts();
+    }
+    fontWaitTimer = setTimeout(beginAfterFonts, FONT_WAIT_MS);
+
+    // Hard failsafe — only matters if timers stall; healthy loads unlock earlier.
+    const failsafeTimer = setTimeout(unlockSite, 6000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(shutterTimer);
+      clearTimeout(unlockTimer);
+      clearTimeout(fontWaitTimer);
+      clearTimeout(failsafeTimer);
+      document.body.style.overflow = "";
+    };
+  }, [
+    performanceProfile.disableAutoplayVideo,
+    performanceProfile.prefersReducedMotion,
+    performanceProfile.useShortIntro,
+  ]);
 
 
 
@@ -853,7 +934,7 @@ export default function App() {
       />
 
       {/* ⭐ Interactive Star-themed Cursor Trail */}
-      {performanceProfile.enableCursorTrail && <StarCursorTrail />}
+      {performanceProfile.enableCursorTrail && <CanvasCursor />}
 
       {/* 📹 Fixed Background Video Layer (Standard MP4 or Vimeo / YouTube Iframe) */}
       <BackgroundVideo
@@ -926,92 +1007,94 @@ export default function App() {
         {/* Soft elegant glowing emerald orb in top left exactly as shown in screenshot */}
         <div className="absolute top-12 left-6 md:left-20 w-48 h-48 md:w-64 md:h-64 rounded-full bg-emerald-500/15 blur-[80px] md:blur-[110px] pointer-events-none" />
 
-        <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
-          {/* Left Column: Tech Matrix Blueprint & Education Info */}
-          <div className="lg:col-span-5 flex flex-col gap-6 w-full">
-            <Suspense fallback={<CanvasLoader />}>
-              {!loaderActive && <TechMatrixCanvas />}
-            </Suspense>
-
-            {/* Elegant Education Block */}
-            <div className="p-5 rounded-2xl bg-white/[0.01]/10 text-white space-y-3 shadow-xl">
-              <div className="flex items-center gap-2 pb-2">
-                <BookOpen className="w-4 h-4 text-cyan-400" />
-                <h3 className="text-xs font-mono uppercase tracking-wider font-bold">Academic Foundation</h3>
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-sm font-semibold text-white">B.S. in Computer Engineering</h4>
-                <p className="text-xs text-gray-400">University of San Carlos</p>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-cyan-400">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>2022 — 2026</span>
+        <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left — identity + copy, free on the background */}
+          <div className="flex flex-col justify-center text-white space-y-7">
+            <div className="flex items-center gap-5 md:gap-6">
+              <div className="relative w-28 h-28 md:w-36 md:h-36 shrink-0">
+                <div className="absolute -inset-[1px] rounded-full bg-gradient-to-br from-cyan-400/40 via-purple-500/25 to-transparent opacity-70" />
+                <div className="absolute inset-0 rounded-full overflow-hidden ring-1 ring-white/10 shadow-[0_0_24px_rgba(34,211,238,0.12)]">
+                  <img
+                    src={gradPic}
+                    alt="Cyvneil Gleine Enriquez graduation portrait"
+                    className="w-full h-full object-cover object-top [filter:brightness(0.96)_saturate(0.92)]"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-cyan-400/5 pointer-events-none" />
                 </div>
               </div>
 
-              <div className="pt-2 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-purple-400" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300">Certifications</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-cyan-400 font-mono tracking-widest text-xs uppercase mb-1 block">
+                  Junior Web Developer
+                </span>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-tight">
+                  Cyvneil Enriquez
+                </h2>
+                <div className="mt-2 h-[2px] bg-gradient-to-r from-cyan-400 via-purple-500 to-transparent w-full" />
+                <div className="mt-4 space-y-1">
+                  <h4 className="text-sm font-semibold">Bachelor of Science in Computer Engineering</h4>
+                  <p className="text-xs text-gray-400">University of San Carlos - Cebu City, Philippines</p>
                 </div>
-                <ul className="space-y-1.5 text-xs text-gray-300 font-sans">
-                  <li className="flex items-start gap-1">
-                    <span className="text-purple-400 mr-1">•</span>
-                    <span>Colt Steele: Web Developer Bootcamp 2025 (75h)</span>
-                  </li>
-                  <li className="flex items-start gap-1">
-                    <span className="text-purple-400 mr-1">•</span>
-                    <span>Google UI/UX Design Professional Certificate (30h)</span>
-                  </li>
-                </ul>
               </div>
             </div>
-          </div>
 
-          {/* Right Column: Custom Designer Biography & Tabbed Details */}
-          <div className="lg:col-span-7 flex flex-col items-start text-left text-white space-y-6">
-            <div>
-              <span className="text-cyan-400 font-mono tracking-widest text-xs uppercase mb-1 block">
-                FULL-STACK SOFTWARE ENGINEER
-              </span>
-              <h2 className="text-4xl md:text-5xl lg:text-5xl font-bold tracking-tight text-white mb-2 leading-tight">
-                Cyvneil Gleine Enriquez
-              </h2>
-              {/* Highlight gradient underline */}
-              <div className="h-[2px] bg-gradient-to-r from-cyan-400 via-purple-500 to-transparent w-full" />
-            </div>
-
-            {/* Geological Pin location & Contact widgets */}
-            <div className="flex flex-wrap gap-4 items-center text-gray-400 text-xs font-mono tracking-wider">
-              <div className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors cursor-default">
+            <div className="flex flex-wrap gap-x-4 gap-y-2 items-center text-gray-400 text-xs font-mono tracking-wider">
+              <div className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-cyan-400" />
-                <span>Cebu City, Philippines</span>
+                <span> Philippines</span>
               </div>
-              <span className="text-white/10">|</span>
+              <span className="text-white/15">|</span>
               <a href="mailto:cyvenriquez1@gmail.com" className="hover:text-purple-400 transition-colors">
                 cyvenriquez1@gmail.com
               </a>
-              <span className="text-white/10">|</span>
+              <span className="text-white/15">|</span>
               <a href="https://www.linkedin.com/in/cyvneil" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors flex items-center gap-1">
                 <span>linkedin</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
 
-            {/* Main bio based directly on pdf content */}
-            <p className="text-sm md:text-base text-gray-300 font-normal leading-relaxed">
+            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
               Computer Engineering graduate and aspiring Full-Stack Developer with a robust technical foundation in the modern Node.js, Express, React, and Vue.js ecosystem. Proficient in architecting both relational (PostgreSQL) and NoSQL (MongoDB) database systems while driving agile workflows, performance tuning, and row-level security constraints.
             </p>
 
-            {/* A clean minimalist signature box summarizing his engineering drive */}
-            <div className="p-5 rounded-2xl bg-white/[0.02]/20 border border-white/5 space-y-3.5 w-full">
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300">Engineering Philosophy</span>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-purple-400" />
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300">Certifications</span>
+                </div>
+                <ul className="space-y-1.5 text-xs text-gray-300">
+                  <li className="flex items-start gap-1">
+                    <span className="text-purple-400 mr-1">•</span>
+                    <span>Colt Steele: Web Developer Bootcamp 2025</span>
+                  </li>
+                  <li className="flex items-start gap-1">
+                    <span className="text-purple-400 mr-1">•</span>
+                    <span>Google UI/UX Design Professional Certificate</span>
+                  </li>
+                </ul>
               </div>
-              <p className="text-sm text-gray-300 leading-relaxed font-mono italic">
-                "I focus on writing clean, straightforward code and building systems that do exactly what they're supposed to. Good software shouldn't be over-engineered—it should be simple, reliable, and easy to maintain."
-              </p>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300">Engineering Philosophy</span>
+                </div>
+                <p className="text-sm text-gray-300 leading-relaxed font-mono italic">
+                  "I focus on writing clean, straightforward code and building systems that do exactly what they're supposed to. Good software shouldn't be over-engineered—it should be simple, reliable, and easy to maintain."
+                </p>
+              </div>
             </div>
+          </div>
+
+          {/* Right — blueprint, free on the background */}
+          <div className="w-full flex items-center justify-center">
+            <Suspense fallback={<CanvasLoader />}>
+              {!loaderActive && <TechMatrixCanvas />}
+            </Suspense>
           </div>
         </div>
       </section>
@@ -1046,7 +1129,7 @@ export default function App() {
                 </div>
                 <div className="flex flex-wrap gap-2.5">
                   {[
-                    "TypeScript", "JavaScript", "HTML5", "CSS3", "React", "Next.js", "Vue.js", "Tailwind CSS", "Bootstrap"
+                    "JavaScript", "HTML5", "CSS3", "React", "Vue.js", "Tailwind CSS", "Bootstrap"
                   ].map((tech) => (
                     <div
                       key={tech}
@@ -1071,7 +1154,7 @@ export default function App() {
                 </div>
                 <div className="flex flex-wrap gap-2.5">
                   {[
-                    "Node.js", "Express.js", "PostgreSQL", "MongoDB", "MySQL", "Supabase", "Row-Level Security", "RESTful APIs"
+                    "Node.js", "Express.js", "PostgreSQL", "MongoDB", "MySQL", "RESTful APIs"
                   ].map((tech) => (
                     <div
                       key={tech}
@@ -1096,7 +1179,7 @@ export default function App() {
                 </div>
                 <div className="flex flex-wrap gap-2.5">
                   {[
-                    "Git", "Docker", "Hostinger", "Supabase CLI", "Cloudinary", "Vite", "Vercel", "Render", "Figma", "Resend", "jsPDF"
+                    "Git", "Docker", "Hostinger", "Cloudinary", "Vite", "Vercel", "Render", "Figma", "Resend", "jsPDF"
                   ].map((tech) => (
                     <div
                       key={tech}

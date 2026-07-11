@@ -341,7 +341,7 @@ export default function TechMatrixCanvas() {
 
   return (
     <div className="relative w-full flex flex-col items-center">
-      <div className="relative w-full aspect-square max-w-[420px] mx-auto select-none overflow-hidden cursor-grab active:cursor-grabbing bg-white/[0.01]/10 rounded-2xl p-4 shadow-xl">
+      <div className="relative w-full aspect-square max-w-[480px] mx-auto select-none overflow-hidden cursor-grab active:cursor-grabbing">
         <canvas
           ref={canvasRef}
           onMouseDown={handleMouseDown}
