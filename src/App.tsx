@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, RefObject, FormEvent, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, FormEvent, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Sliders, RotateCcw, Stars, MapPin, Github, Linkedin, Facebook, ChevronDown, ExternalLink, Award, BookOpen, Cpu, Server, Wrench, Mail, Send, Check, Copy } from "lucide-react";
 import { Analytics } from "@vercel/analytics/react";
@@ -86,44 +86,6 @@ const THEME_PRESETS: ThemeConfig[] = [
   }
 ];
 
-// --- Royalty-Free Default Background Video Presets ---
-interface VideoPreset {
-  id: string;
-  name: string;
-  url: string;
-  description: string;
-}
-
-const VIDEO_PRESETS: VideoPreset[] = [
-  {
-    id: "kling-vimeo",
-    name: "Kling AI Video (Default)",
-    url: "https://player.vimeo.com/video/1203015100?badge=0&autopause=0&player_id=0&app_id=58479",
-    description: "Your custom Kling AI background video directly streamed from Vimeo",
-  },
-  {
-    id: "space-nebula",
-    name: "Abyssal Space Clouds",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-background-1611-large.mp4",
-    description: "Serene magenta/blue space clouds slowly floating",
-  },
-  {
-    id: "hyperspace",
-    name: "Hyperspace Jump",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-flying-through-a-star-field-in-space-44685-large.mp4",
-    description: "Fast-forward starry cosmic travel effect",
-  },
-  {
-    id: "deep-rift",
-    name: "Deep Nebula Rift",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-nebula-in-deep-space-41584-large.mp4",
-    description: "Stunning active red interstellar dust clusters",
-  }
-];
-
-const DEFAULT_VIMEO_URL = VIDEO_PRESETS[0].url;
-const LIGHTWEIGHT_VIDEO_URL = VIDEO_PRESETS[1].url;
-
 interface PerformanceProfile {
   isLowPower: boolean;
   prefersReducedMotion: boolean;
@@ -135,9 +97,6 @@ interface PerformanceProfile {
   defaultStarCount: number;
   defaultParallaxStrength: number;
   defaultShootingStarRate: number;
-  defaultVideoUrl: string;
-  defaultVideoId: string;
-  disableAutoplayVideo: boolean;
   enableCursorTrail: boolean;
 }
 
@@ -154,9 +113,6 @@ const getPerformanceProfile = (): PerformanceProfile => {
       defaultStarCount: 250,
       defaultParallaxStrength: 15,
       defaultShootingStarRate: 45,
-      defaultVideoUrl: DEFAULT_VIMEO_URL,
-      defaultVideoId: "kling-vimeo",
-      disableAutoplayVideo: false,
       enableCursorTrail: true,
     };
   }
@@ -171,13 +127,11 @@ const getPerformanceProfile = (): PerformanceProfile => {
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
   const saveData = Boolean(nav.connection?.saveData);
-  // Only treat true 2g as a constrained network — do not blanket-disable video for 3g/mobile Wi‑Fi.
   const slowConnection = (nav.connection?.effectiveType ?? "") === "2g";
   const lowMemory = typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4;
   const lowCoreCount = navigator.hardwareConcurrency <= 4;
   const narrowViewport = window.innerWidth < 768;
   const isLowPower = prefersReducedMotion || saveData || slowConnection || isCoarsePointer || lowMemory || lowCoreCount || narrowViewport;
-  // Short intro only when the session is actually constrained — not every phone.
   const useShortIntro = prefersReducedMotion || saveData || slowConnection;
 
   return {
@@ -191,140 +145,8 @@ const getPerformanceProfile = (): PerformanceProfile => {
     defaultStarCount: isLowPower ? 120 : 250,
     defaultParallaxStrength: isLowPower ? 8 : 15,
     defaultShootingStarRate: isLowPower ? 75 : 45,
-    defaultVideoUrl: isLowPower ? LIGHTWEIGHT_VIDEO_URL : DEFAULT_VIMEO_URL,
-    defaultVideoId: isLowPower ? "space-nebula" : "kling-vimeo",
-    disableAutoplayVideo: prefersReducedMotion || saveData || slowConnection,
     enableCursorTrail: !isLowPower,
   };
-};
-
-// --- Embed / Video Link Utilities ---
-const isIframeUrl = (url: string) => {
-  return url.includes("vimeo.com") || url.includes("youtube.com") || url.includes("<iframe") || url.includes("player.");
-};
-
-const getEmbedUrl = (input: string) => {
-  let src = input;
-  if (input.includes("<iframe")) {
-    const match = input.match(/src="([^"]+)"/);
-    if (match && match[1]) {
-      src = match[1];
-    }
-  }
-
-  // Clean and optimize Vimeo iframe src with background attributes
-  if (src.includes("player.vimeo.com") && !src.includes("background=1")) {
-    const separator = src.includes("?") ? "&" : "?";
-    src = `${src}${separator}background=1&autoplay=1&loop=1&muted=1&byline=0&portrait=0&title=0`;
-  }
-  return src;
-};
-
-interface BackgroundVideoProps {
-  loadVideo: boolean;
-  videoUrl: string;
-  videoBlur: number;
-  videoOpacity: number;
-  loaderActive: boolean;
-  videoSpeed: number;
-  videoRef: RefObject<HTMLVideoElement | null>;
-  setVideoLoading: (loading: boolean) => void;
-  setVideoError: (error: string | null) => void;
-}
-
-const BackgroundVideo = ({
-  loadVideo,
-  videoUrl,
-  videoBlur,
-  videoOpacity,
-  loaderActive,
-  videoSpeed,
-  videoRef,
-  setVideoLoading,
-  setVideoError
-}: BackgroundVideoProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const el = containerRef.current;
-      if (!el) return;
-      const scrollY = window.scrollY;
-      const currentHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-      const scrollFactor = Math.max(0, 1 - scrollY / (currentHeight || 800));
-      el.style.opacity = scrollFactor.toString();
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  return (
-    <>
-      {loadVideo && videoUrl && (
-        <div
-          ref={containerRef}
-          className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden z-[2]"
-          style={{
-            filter: videoBlur > 0 ? `blur(${videoBlur}px)` : "none",
-          }}
-        >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: loaderActive ? 0 : videoOpacity }}
-            transition={{ duration: 1.5 }}
-            className="w-full h-full"
-          >
-            {isIframeUrl(videoUrl) ? (
-              <iframe
-                src={getEmbedUrl(videoUrl)}
-                frameBorder="0"
-                allow="autoplay; fullscreen; picture-in-picture"
-                referrerPolicy="strict-origin-when-cross-origin"
-                loading="eager"
-                className="absolute pointer-events-none"
-                style={{
-                  width: '100vw',
-                  height: '56.25vw',
-                  minHeight: '100vh',
-                  minWidth: '177.77vh',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -46%) scale(1.12)',
-                }}
-                title="Kling Generative background video player"
-                onLoad={() => setVideoLoading(false)}
-              />
-            ) : (
-              <video
-                ref={videoRef}
-                src={videoUrl}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                onLoadStart={() => setVideoLoading(true)}
-                onCanPlay={() => {
-                  setVideoLoading(false);
-                  if (videoRef.current) {
-                    videoRef.current.playbackRate = videoSpeed;
-                  }
-                }}
-                onError={() => {
-                  setVideoLoading(false);
-                  setVideoError("Unable to stream this video file. Ensure it is a direct MP4/WebM URL.");
-                }}
-                className="w-full h-full object-cover scale-[1.10] origin-top"
-              />
-            )}
-          </motion.div>
-        </div>
-      )}
-    </>
-  );
 };
 
 interface ScrollPromptProps {
@@ -399,7 +221,6 @@ interface ShootingStar {
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [performanceProfile] = useState<PerformanceProfile>(() => getPerformanceProfile());
 
   // --- Configuration State ---
@@ -411,14 +232,6 @@ export default function App() {
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
   const [showConfig, setShowConfig] = useState<boolean>(false);
 
-  // --- Custom Video Overrides ---
-  const [videoUrl, setVideoUrl] = useState<string>(performanceProfile.defaultVideoUrl);
-  const [activeVideoId, setActiveVideoId] = useState<string>(performanceProfile.defaultVideoId);
-  const [videoOpacity, setVideoOpacity] = useState<number>(performanceProfile.isLowPower ? 0.05 : 0.10);
-  const [videoBlur, setVideoBlur] = useState<number>(0);
-  const [videoSpeed, setVideoSpeed] = useState<number>(1.0);
-  const [videoLoading, setVideoLoading] = useState<boolean>(false);
-  const [videoError, setVideoError] = useState<string | null>(null);
 
   // --- Mouse Parallax Tracker ---
   const mouseCoords = useRef({ x: 0, y: 0 });
@@ -435,8 +248,6 @@ export default function App() {
   // --- Immersive Custom Initial Loader States ---
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [loaderActive, setLoaderActive] = useState<boolean>(true);
-  // Video mounts after fonts settle (during brand hold) so it can play when shutters open.
-  const [loadVideo, setLoadVideo] = useState<boolean>(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -448,22 +259,11 @@ export default function App() {
       if (cancelled) return;
       setLoaderActive(false);
       setInitialLoading(false);
-      // Safety: ensure video starts even if shutter path was skipped.
-      beginVideoLoad();
       document.body.style.overflow = "";
-    };
-
-    const beginVideoLoad = () => {
-      if (cancelled || performanceProfile.disableAutoplayVideo) return;
-      setLoadVideo(true);
     };
 
     const startShutterSequence = () => {
       if (cancelled) return;
-
-      // Preload video during the brand hold so it can play as soon as shutters open.
-      // Still opacity-0 while loaderActive; no fight with the initial font race.
-      beginVideoLoad();
 
       // Constrained sessions only (saveData / 2g) — not every phone.
       // Reduced motion is handled before the font race below.
@@ -482,7 +282,6 @@ export default function App() {
 
     // Reduced motion: skip brand wait + font race; unlock almost immediately.
     if (performanceProfile.prefersReducedMotion) {
-      beginVideoLoad();
       shutterTimer = setTimeout(() => {
         if (cancelled) return;
         setLoaderActive(false);
@@ -526,7 +325,6 @@ export default function App() {
       document.body.style.overflow = "";
     };
   }, [
-    performanceProfile.disableAutoplayVideo,
     performanceProfile.prefersReducedMotion,
     performanceProfile.useShortIntro,
   ]);
@@ -563,12 +361,6 @@ export default function App() {
     };
   }, []);
 
-  // --- Handle Video Playback Rate Updates ---
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = videoSpeed;
-    }
-  }, [videoSpeed, videoUrl, activeVideoId]);
 
   // --- Starfield Initialization & Loop ---
   useEffect(() => {
@@ -810,36 +602,8 @@ export default function App() {
     setTwinkleSpeedFactor(1);
     setParallaxStrength(performanceProfile.defaultParallaxStrength);
     setShootingStarRate(performanceProfile.defaultShootingStarRate);
-    setVideoUrl(performanceProfile.defaultVideoUrl);
-    setActiveVideoId(performanceProfile.defaultVideoId);
-    setVideoOpacity(performanceProfile.isLowPower ? 0.05 : 0.10);
-    setVideoBlur(0);
-    setVideoSpeed(1.0);
-    setVideoError(null);
-    setLoadVideo(!performanceProfile.disableAutoplayVideo);
   };
 
-  // --- Fast helper to assign video presets ---
-  const selectVideoPreset = (preset: VideoPreset) => {
-    setVideoError(null);
-    setVideoLoading(true);
-    setActiveVideoId(preset.id);
-    setVideoUrl(preset.url);
-    setLoadVideo(true);
-  };
-
-  const handleCustomVideoSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const url = data.get("url") as string;
-    if (url.trim()) {
-      setVideoError(null);
-      setVideoLoading(true);
-      setActiveVideoId("custom");
-      setVideoUrl(url.trim());
-      setLoadVideo(true);
-    }
-  };
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText("cyvenriquez1@gmail.com");
@@ -936,18 +700,6 @@ export default function App() {
       {/* ⭐ Interactive Star-themed Cursor Trail */}
       {performanceProfile.enableCursorTrail && <CanvasCursor />}
 
-      {/* 📹 Fixed Background Video Layer (Standard MP4 or Vimeo / YouTube Iframe) */}
-      <BackgroundVideo
-        loadVideo={loadVideo}
-        videoUrl={videoUrl}
-        videoBlur={videoBlur}
-        videoOpacity={videoOpacity}
-        loaderActive={loaderActive}
-        videoSpeed={videoSpeed}
-        videoRef={videoRef}
-        setVideoLoading={setVideoLoading}
-        setVideoError={setVideoError}
-      />
 
       {/* Fixed Ambient subtle vignette gradient Overlay */}
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.85)_100%)] pointer-events-none z-[3]" />
@@ -993,17 +745,20 @@ export default function App() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-6 md:mt-8 flex items-center justify-center"
+            className="mt-6 md:mt-8 flex flex-col items-center justify-center gap-3"
           >
             <span className="text-[11px] md:text-[13px] font-medium tracking-[0.22em] uppercase text-gray-400 font-sans select-none">
               Junior Web Developer
+            </span>
+            <span className="text-[11px] md:text-xs font-mono tracking-[0.18em] uppercase text-white/45">
+              Cyvneil Enriquez · Cebu, Philippines
             </span>
           </motion.div>
         </div>
       </section>
 
       {/* ------------------- SECTION 2: DIGITAL INTEGRATED PORTFOLIO ------------------- */}
-      <section className="relative w-full min-h-screen flex items-center justify-center py-24 md:py-32 px-6 md:px-12 lg:px-24 xl:px-32 z-10">
+      <section id="about" className="relative w-full min-h-screen flex items-center justify-center py-24 md:py-32 px-6 md:px-12 lg:px-24 xl:px-32 z-10">
         {/* Soft elegant glowing emerald orb in top left exactly as shown in screenshot */}
         <div className="absolute top-12 left-6 md:left-20 w-48 h-48 md:w-64 md:h-64 rounded-full bg-emerald-500/15 blur-[80px] md:blur-[110px] pointer-events-none" />
 
@@ -1034,8 +789,12 @@ export default function App() {
                 </h2>
                 <div className="mt-2 h-[2px] bg-gradient-to-r from-cyan-400 via-purple-500 to-transparent w-full" />
                 <div className="mt-4 space-y-1">
-                  <h4 className="text-sm font-semibold">Bachelor of Science in Computer Engineering</h4>
-                  <p className="text-xs text-gray-400">University of San Carlos - Cebu City, Philippines</p>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-cyan-400" />
+                    <h3 className="text-xs font-mono uppercase tracking-wider font-bold">Academic Foundation</h3>
+                  </div>
+                  <h4 className="text-sm font-semibold">B.S. in Computer Engineering</h4>
+                  <p className="text-xs text-gray-400">University of San Carlos</p>
                 </div>
               </div>
             </div>
@@ -1043,7 +802,7 @@ export default function App() {
             <div className="flex flex-wrap gap-x-4 gap-y-2 items-center text-gray-400 text-xs font-mono tracking-wider">
               <div className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-cyan-400" />
-                <span> Philippines</span>
+                <span>Cebu City, Philippines</span>
               </div>
               <span className="text-white/15">|</span>
               <a href="mailto:cyvenriquez1@gmail.com" className="hover:text-purple-400 transition-colors">
@@ -1058,6 +817,10 @@ export default function App() {
 
             <p className="text-sm md:text-base text-gray-300 leading-relaxed">
               Computer Engineering graduate and aspiring Full-Stack Developer with a robust technical foundation in the modern Node.js, Express, React, and Vue.js ecosystem. Proficient in architecting both relational (PostgreSQL) and NoSQL (MongoDB) database systems while driving agile workflows, performance tuning, and row-level security constraints.
+            </p>
+
+            <p className="text-sm text-gray-400 leading-relaxed border-l border-cyan-400/30 pl-4">
+              This portfolio collects the products I&apos;ve shipped, the tools I rely on, and the way I like to build — clear interfaces, dependable systems, and code that stays easy to maintain.
             </p>
 
             <div className="space-y-5">
@@ -1496,54 +1259,6 @@ export default function App() {
                   />
                 </div>
 
-                {/* Background Video Controls */}
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">Background Video</label>
-                    <input
-                      type="checkbox"
-                      checked={loadVideo}
-                      onChange={(e) => setLoadVideo(e.target.checked)}
-                      className="accent-purple-500 rounded border-white/10 bg-white/5 cursor-pointer w-4 h-4"
-                    />
-                  </div>
-
-                  {loadVideo && (
-                    <>
-                      <div>
-                        <div className="flex justify-between items-center mb-1.5">
-                          <label className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">Video Opacity</label>
-                          <span className="text-[10px] font-mono text-purple-300">{Math.round(videoOpacity * 100)}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.05"
-                          max="0.9"
-                          step="0.05"
-                          value={videoOpacity}
-                          onChange={(e) => setVideoOpacity(parseFloat(e.target.value))}
-                          className="w-full accent-purple-500 h-1 bg-white/10 rounded-lg cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1.5">
-                          <label className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">Video Blur</label>
-                          <span className="text-[10px] font-mono text-purple-300">{videoBlur}px</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="10"
-                          step="1"
-                          value={videoBlur}
-                          onChange={(e) => setVideoBlur(parseInt(e.target.value))}
-                          className="w-full accent-purple-500 h-1 bg-white/10 rounded-lg cursor-pointer"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
               </div>
             </motion.div>
           )}
