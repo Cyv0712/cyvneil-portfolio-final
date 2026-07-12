@@ -748,10 +748,10 @@ export default function App() {
             className="mt-6 md:mt-8 flex flex-col items-center justify-center gap-3"
           >
             <span className="text-[11px] md:text-[13px] font-medium tracking-[0.22em] uppercase text-gray-400 font-sans select-none">
-              Junior Web Developer
+              Cyvneil Enriquez · Philippines
             </span>
             <span className="text-[11px] md:text-xs font-mono tracking-[0.18em] uppercase text-white/45">
-              Cyvneil Enriquez · Cebu, Philippines
+              Junior Web Developer
             </span>
           </motion.div>
         </div>
