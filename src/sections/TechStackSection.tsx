@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Cpu, Server, Wrench } from "lucide-react";
+import { Cpu, Server, Wrench, Sparkles } from "lucide-react";
 import TechLogo from "../components/TechLogo";
 
 const TechOrbitRingCanvas = lazy(() => import("../components/TechOrbitRingCanvas"));
@@ -23,7 +23,7 @@ export default function TechStackSection() {
               Tech Stack
             </h2>
             <p className="text-sm text-gray-400 font-sans tracking-wide">
-              These are the languages, frameworks, databases, and DevOps tools that I leverage to build robust scale-ready software.
+              These are the languages, frameworks, databases, DevOps tools, and AI workflows that I leverage to build robust scale-ready software.
             </p>
             <div className="h-[2px] bg-gradient-to-r from-purple-500 via-cyan-400 to-transparent w-full md:w-2/3" />
           </div>
@@ -36,11 +36,14 @@ export default function TechStackSection() {
                   Languages & Frontend
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2.5" role="list" aria-label="Languages and Frontend technologies">
                 {["JavaScript", "HTML5", "CSS3", "React", "Vue.js", "Tailwind CSS", "Bootstrap"].map((tech) => (
                   <div
                     key={tech}
-                    className="flex items-center gap-2.5 px-3 py-1.5 bg-white/[0.01] hover:bg-rose-500/10 border border-white/[0.08] hover:border-[#f43f5e]/40 text-gray-300 hover:text-white rounded-xl transition-all duration-300 cursor-default shadow"
+                    role="listitem"
+                    tabIndex={0}
+                    aria-label={`Technology: ${tech}`}
+                    className="flex items-center gap-2.5 px-3 py-1.5 bg-white/[0.01] hover:bg-rose-500/10 focus-visible:bg-rose-500/10 border border-white/[0.08] hover:border-[#f43f5e]/40 focus-visible:border-[#f43f5e]/50 text-gray-300 hover:text-white focus-visible:text-white rounded-xl transition-all duration-300 cursor-default shadow outline-none focus-visible:ring-1 focus-visible:ring-[#f43f5e]/50 active:scale-[0.98]"
                   >
                     <div className="p-1 rounded-md border border-white/[0.08] bg-white/[0.04]">
                       <TechLogo name={tech} />
@@ -58,11 +61,14 @@ export default function TechStackSection() {
                   Backend & Storage
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2.5" role="list" aria-label="Backend and Storage technologies">
                 {["Node.js", "Express.js", "PostgreSQL", "MongoDB", "MySQL", "RESTful APIs"].map((tech) => (
                   <div
                     key={tech}
-                    className="flex items-center gap-2.5 px-3 py-1.5 bg-white/[0.01] hover:bg-amber-500/10 border border-white/[0.08] hover:border-amber-500/40 text-gray-300 hover:text-white rounded-xl transition-all duration-300 cursor-default shadow"
+                    role="listitem"
+                    tabIndex={0}
+                    aria-label={`Technology: ${tech}`}
+                    className="flex items-center gap-2.5 px-3 py-1.5 bg-white/[0.01] hover:bg-amber-500/10 focus-visible:bg-amber-500/10 border border-white/[0.08] hover:border-amber-500/40 focus-visible:border-amber-500/50 text-gray-300 hover:text-white focus-visible:text-white rounded-xl transition-all duration-300 cursor-default shadow outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 active:scale-[0.98]"
                   >
                     <div className="p-1 rounded-md border border-white/[0.08] bg-white/[0.04]">
                       <TechLogo name={tech} />
@@ -80,12 +86,15 @@ export default function TechStackSection() {
                   DevOps & Tooling
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2.5" role="list" aria-label="DevOps and Tooling technologies">
                 {["Git", "Docker", "Hostinger", "Cloudinary", "Vite", "Vercel", "Render", "Figma", "Resend", "jsPDF"].map(
                   (tech) => (
                     <div
                       key={tech}
-                      className="flex items-center gap-2.5 px-3 py-1.5 bg-white/[0.01] hover:bg-yellow-500/10 border border-white/[0.08] hover:border-yellow-500/40 text-gray-300 hover:text-white rounded-xl transition-all duration-300 cursor-default shadow"
+                      role="listitem"
+                      tabIndex={0}
+                      aria-label={`Technology: ${tech}`}
+                      className="flex items-center gap-2.5 px-3 py-1.5 bg-white/[0.01] hover:bg-yellow-500/10 focus-visible:bg-yellow-500/10 border border-white/[0.08] hover:border-yellow-500/40 focus-visible:border-yellow-500/50 text-gray-300 hover:text-white focus-visible:text-white rounded-xl transition-all duration-300 cursor-default shadow outline-none focus-visible:ring-1 focus-visible:ring-yellow-500/50 active:scale-[0.98]"
                     >
                       <div className="p-1 rounded-md border border-white/[0.08] bg-white/[0.04]">
                         <TechLogo name={tech} />
@@ -94,6 +103,31 @@ export default function TechStackSection() {
                     </div>
                   )
                 )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <span className="text-[11px] font-semibold text-cyan-400 font-mono uppercase tracking-widest block">
+                  AI & Agentic Workflows
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2.5" role="list" aria-label="AI and Agentic Workflow tools">
+                {["Gemini", "Cursor Grok", "Composer", "Claude Code", "Claude CLI", "Google Stitch"].map((tech) => (
+                  <div
+                    key={tech}
+                    role="listitem"
+                    tabIndex={0}
+                    aria-label={`AI Tool: ${tech}`}
+                    className="flex items-center gap-2.5 px-3 py-1.5 bg-white/[0.01] hover:bg-cyan-500/10 focus-visible:bg-cyan-500/10 border border-white/[0.08] hover:border-cyan-400/40 focus-visible:border-cyan-400/50 text-gray-300 hover:text-white focus-visible:text-white rounded-xl transition-all duration-300 cursor-default shadow outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/50 active:scale-[0.98]"
+                  >
+                    <div className="p-1 rounded-md border border-white/[0.08] bg-white/[0.04]">
+                      <TechLogo name={tech} />
+                    </div>
+                    <span className="text-[11.5px] font-mono tracking-wide border-l border-white/10 pl-2 py-0.5">{tech}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
