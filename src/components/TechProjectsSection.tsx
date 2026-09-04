@@ -74,7 +74,7 @@ export const projectItems: ProjectItem[] = [
     description:
       'Inventory site and admin panel for a pre-owned motorcycle shop. Originally deployed via Vercel & Render with Cloudinary, then migrated to a self-hosted Hostinger VPS with self-hosted Umami and Uptime Kuma monitoring to optimize resource utilization and tracking.',
     role: 'Full Stack Developer',
-    organization: 'Unsponsored Client Project',
+    organization: 'Freelance Project',
     liveUrl: 'https://katinginbikes.com',
     repoUrl: 'https://github.com/Cyv0712/katingin-bikes',
     tech: ['React 19', 'Bootstrap', 'Node.js', 'Express', 'MongoDB Atlas', 'Cloudinary', 'Hostinger VPS', 'Umami', 'Uptime Kuma'],
@@ -112,7 +112,7 @@ export const projectItems: ProjectItem[] = [
     description:
       'Big-bike inventory site for a seller in the Philippines. Strong brand story on the front, easy ways to reach them on WhatsApp, Viber, or Messenger.',
     role: 'Full Stack Developer',
-    organization: 'Unsponsored Client Project',
+    organization: 'Freelance Project',
     liveUrl: 'https://jettlaudonedeal.com',
     repoUrl: 'https://github.com/Cyv0712/jett-lau-done-deal',
     tech: ['React 19', 'Vite', 'Bootstrap', 'Node.js', 'Express', 'MongoDB Atlas', 'Cloudinary'],
