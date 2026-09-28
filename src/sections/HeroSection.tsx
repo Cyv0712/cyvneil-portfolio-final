@@ -1,50 +1,86 @@
-import { motion } from "motion/react";
-import type { ThemeConfig } from "../data/themes";
+import FadeIn from "../components/FadeIn";
+import Magnet from "../components/Magnet";
+import ContactButton from "../components/ContactButton";
+import heroPortrait from "../assets/hero-portrait.webp";
+
+// Fade the photo's studio backdrop into the page on every edge.
+const PORTRAIT_MASK =
+  "linear-gradient(to bottom, transparent 0%, black 16%, black 72%, transparent 100%), " +
+  "linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%)";
 import { site } from "../data/site";
 
-interface HeroSectionProps {
-  activeTheme: ThemeConfig;
-}
+const NAV_LINKS = [
+  { label: "About", href: "#about" },
+  { label: "Services", href: "#services" },
+  { label: "Projects", href: "#projects" },
+  { label: "Contact", href: "#contact" },
+];
 
-export default function HeroSection({ activeTheme }: HeroSectionProps) {
+export default function HeroSection() {
   return (
-    <section className="relative w-full h-screen flex flex-col items-center justify-center text-center px-4 md:px-8 z-10">
-      <div className="max-w-4xl mx-auto flex flex-col items-center justify-center">
-        <motion.h1
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[2.25rem] sm:text-[3.25rem] md:text-[4.75rem] font-light tracking-[-0.03em] text-white leading-[1.15] md:leading-[1.12]"
-        >
-          Where pixel-perfect design{" "}
-          <br className="hidden sm:block" />
-          <span className="block sm:inline">meets clean </span>
-          <span className="relative inline-block font-medium transition-all duration-300">
-            <span
-              className="bg-clip-text text-transparent bg-gradient-to-r transition-all duration-500 font-semibold"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${activeTheme.gradientFrom}, ${activeTheme.gradientVia}, ${activeTheme.gradientTo})`,
-              }}
-            >
-              engineering
-            </span>
-            <span className="text-white">.</span>
-          </span>
-        </motion.h1>
+    <section className="relative h-screen flex flex-col" style={{ overflowX: "clip" }}>
+      <FadeIn as="nav" delay={0} y={-20} className="relative z-20 flex justify-between px-6 md:px-10 pt-6 md:pt-8">
+        {NAV_LINKS.map((link) => (
+          <a
+            key={link.label}
+            href={link.href}
+            className="text-[#D7E2EA] font-medium uppercase tracking-wider text-sm md:text-lg lg:text-[1.4rem] transition-opacity duration-200 hover:opacity-70"
+          >
+            {link.label}
+          </a>
+        ))}
+      </FadeIn>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-6 md:mt-8 flex flex-col items-center justify-center gap-3"
+      {/* Anchored to the portrait's top edge; see .hero-heading-anchor */}
+      <div className="hero-heading-anchor absolute inset-x-0 z-20 overflow-hidden pointer-events-none">
+        <FadeIn
+          as="h1"
+          delay={0.15}
+          y={40}
+          className="hero-heading font-black uppercase tracking-tight leading-none whitespace-nowrap w-full text-center text-[13.5vw] md:text-[13.8vw] lg:text-[14vw]"
         >
-          <span className="text-[11px] md:text-[13px] font-medium tracking-[0.22em] uppercase text-gray-400 font-sans select-none">
-            {site.name} · {site.country}
-          </span>
-          <span className="text-[11px] md:text-xs font-mono tracking-[0.18em] uppercase text-white/45">
-            {site.role}
-          </span>
-        </motion.div>
+          Hi, i&apos;m {site.firstName}
+        </FadeIn>
+      </div>
+
+      <div className="relative z-20 mt-auto flex justify-between items-end px-6 md:px-10 pb-7 sm:pb-8 md:pb-10">
+        <FadeIn
+          as="p"
+          delay={0.35}
+          y={20}
+          className="text-[#D7E2EA] font-light uppercase tracking-wide leading-snug max-w-[160px] sm:max-w-[220px] md:max-w-[260px]"
+          style={{ fontSize: "clamp(0.75rem, 1.4vw, 1.5rem)" }}
+        >
+          {site.tagline}
+        </FadeIn>
+        <FadeIn delay={0.5} y={20}>
+          <ContactButton />
+        </FadeIn>
+      </div>
+
+      <div className="absolute left-1/2 -translate-x-1/2 z-10 w-[280px] sm:w-[360px] md:w-[440px] lg:w-[520px] top-1/2 -translate-y-1/2 sm:top-auto sm:translate-y-0 sm:bottom-0">
+        <FadeIn delay={0.6} y={30}>
+          <Magnet
+            padding={150}
+            strength={3}
+            axis="x"
+            activeTransition="transform 0.3s ease-out"
+            inactiveTransition="transform 0.6s ease-in-out"
+          >
+            <img
+              src={heroPortrait}
+              alt={`${site.fullName} portrait`}
+              className="w-full h-auto select-none pointer-events-none"
+              style={{
+                maskImage: PORTRAIT_MASK,
+                WebkitMaskImage: PORTRAIT_MASK,
+                maskComposite: "intersect",
+                WebkitMaskComposite: "source-in",
+              }}
+              draggable={false}
+            />
+          </Magnet>
+        </FadeIn>
       </div>
     </section>
   );

@@ -1,4 +1,11 @@
 import { useState } from "react";
+import { WandSparkles } from "lucide-react";
+import claudeLogo from "../assets/about/claude.svg";
+import geminiLogo from "../assets/about/gemini.svg";
+import cursorLogo from "../assets/about/cursor.svg";
+import grokLogo from "../assets/about/grok.svg";
+import v0Logo from "../assets/about/v0.svg";
+import aiStudioLogo from "../assets/about/aistudio.svg";
 
 interface TechLogoProps {
   name: string;
@@ -88,6 +95,28 @@ export default function TechLogo({ name }: TechLogoProps) {
       </span>
     );
   };
+
+  // AI tools aren't on Devicon; use local brand marks (Stitch has no public icon).
+  const lower = name.toLowerCase();
+  const localLogo = lower.includes("claude")
+    ? claudeLogo
+    : lower.includes("gemini")
+      ? geminiLogo
+      : lower.includes("cursor")
+        ? cursorLogo
+        : lower.includes("grok")
+          ? grokLogo
+          : lower.includes("v0")
+            ? v0Logo
+            : lower.includes("ai studio")
+              ? aiStudioLogo
+              : null;
+  if (localLogo) {
+    return <img src={localLogo} alt={`${name} icon`} className="w-4 h-4 object-contain shrink-0" />;
+  }
+  if (lower.includes("stitch")) {
+    return <WandSparkles className="w-4 h-4 text-[#8ab4f8] shrink-0" aria-hidden />;
+  }
 
   // If we know it's a special fallback or if an error loading regular devicon occurs
   if (hasError || ["vercel", "render", "resend", "jspdf", "restful", "api", "hostinger"].some(item => name.toLowerCase().includes(item))) {

@@ -1,48 +1,33 @@
 @import "tailwindcss";
 
-
 @theme {
-  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
-  --font-display: "Bebas Neue", sans-serif;
+  --font-sans: "Kanit", sans-serif;
 }
 
-/* Animated glowing Rainbow Border effect only for the Customize Scene button wrapper */
-.rainbow-border-button {
-  position: relative;
-  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff, #ff0000);
-  background-size: 400% 400%;
-  animation: rainbow-animation 6s linear infinite;
+/* Layered so Tailwind's utility classes still win over the reset. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html,
+  body,
+  #root {
+    background-color: #0C0C0C;
+    font-family: "Kanit", sans-serif;
+  }
 }
 
-.rainbow-border-button::after {
-  content: '';
-  position: absolute;
-  top: -3px; bottom: -3px; left: -3px; right: -3px;
-  z-index: -1;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff, #ff0000);
-  background-size: 400% 400%;
-  animation: rainbow-animation 6s linear infinite;
-  opacity: 0.55;
-  filter: blur(5px);
-  pointer-events: none;
-}
-
-@keyframes rainbow-animation {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 /* Hide scrollbar globally while keeping scrolling functional */
 html, body {
-  background-color: #000000;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
@@ -51,54 +36,55 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
 
-/* Adaptive visual fallbacks for devices where blur/backdrop compositing is costly. */
-.low-power-visuals .backdrop-blur-md {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
+/* Slow bob for the About section's corner logos */
+@keyframes about-float {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-14px) rotate(4deg); }
 }
 
-.low-power-visuals [class*="blur-["],
-.low-power-visuals .blur-3xl {
-  filter: blur(40px) !important;
+.about-float {
+  animation: about-float 6s ease-in-out infinite;
 }
 
-/* GPU-accelerated CSS transition for shutters */
-.loader-shutter {
-  position: absolute;
-  inset: 0;
-  background-color: #000000;
-  transform: translateY(0);
-  transition: transform 0.95s cubic-bezier(0.76, 0, 0.24, 1);
+@media (prefers-reduced-motion: reduce) {
+  .about-float { animation: none; }
 }
 
-.loader-shutter.exit {
-  transform: translateY(100%);
+/*
+ * Hero heading position: the letters' baseline (0.15em above the box bottom)
+ * lands 10% down the portrait (960x960), inside its faded top edge. The photo
+ * has an opaque studio backdrop, so the heading sits in front of it (z-20).
+ * Per breakpoint: portrait width 280/360/440/520px, heading 13.5/13.5/13.8/14vw.
+ * On mobile the portrait is vertically centred; from sm up it sits on the
+ * bottom. min() keeps the heading clear of the nav on short screens.
+ * --hero-heading-drop lowers the letters further down the photo.
+ */
+.hero-heading-anchor {
+  --hero-heading-drop: 0px;
+  bottom: min(calc(50% + 112px - 2.03vw - var(--hero-heading-drop)), calc(100% - 64px - 13.5vw));
 }
 
-/* Loading screen letters entrance animation */
-@keyframes letter-entrance {
-  0% {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
+@media (min-width: 640px) {
+  .hero-heading-anchor {
+    bottom: min(calc(324px - 2.03vw - var(--hero-heading-drop)), calc(100% - 70px - 13.5vw));
   }
 }
 
-.loader-letter {
-  display: inline-block;
-  opacity: 0;
-  animation: letter-entrance 1.0s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@media (min-width: 768px) {
+  .hero-heading-anchor {
+    bottom: min(calc(396px - 2.07vw - var(--hero-heading-drop)), calc(100% - 76px - 13.8vw));
+  }
 }
 
-.loader-letter.exit {
-  animation: none !important;
-  opacity: 1;
-  transform: translateY(100vh);
-  transition: transform 0.95s cubic-bezier(0.76, 0, 0.24, 1);
+@media (min-width: 1024px) {
+  .hero-heading-anchor {
+    bottom: min(calc(468px - 2.1vw - var(--hero-heading-drop)), calc(100% - 80px - 14vw));
+  }
 }
 
-
-
+.hero-heading {
+  background: linear-gradient(180deg, #646973 0%, #BBCCD7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

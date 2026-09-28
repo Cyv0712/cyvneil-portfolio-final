@@ -30,7 +30,7 @@ A premium, highly interactive, space-themed developer portfolio showcase. This s
 1. **Katingin Bikes**: Inventory management site and admin panel for a pre-owned motorcycle shop (Self-Hosted on Hostinger VPS, Umami analytics, Uptime Kuma monitoring, React 19).
 2. **Jett Lau Done Deal**: Big-bike inventory site and client lead platform (React 19, Vite, MongoDB, Cloudinary).
 3. **Barangay Talamban Case Management System**: Thesis project case management and automated CI/CD pipeline deployment (Vue.js, Docker, GitHub Actions, Hostinger VPS).
-4. **Farm-Desk / FarmJournal**: Internal operational tools and product workflow portals built during my software engineering internship at Farmtri AI (Next.js, Supabase, Strict RLS).
+4. **Farm-Desk / FarmJournal**: Internal operational tools and product workflow portals built during my software engineering internship at Farmtri AI (Next.js, TypeScript).
 
 ---
 
