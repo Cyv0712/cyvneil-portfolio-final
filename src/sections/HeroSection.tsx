@@ -1,12 +1,7 @@
 import FadeIn from "../components/FadeIn";
 import Magnet from "../components/Magnet";
 import ContactButton from "../components/ContactButton";
-import heroPortrait from "../assets/hero-portrait.webp";
-
-// Fade the photo's studio backdrop into the page on every edge.
-const PORTRAIT_MASK =
-  "linear-gradient(to bottom, transparent 0%, black 16%, black 72%, transparent 100%), " +
-  "linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%)";
+import gradPic from "../assets/project-previews/grad_pic.svg";
 import { site } from "../data/site";
 
 const NAV_LINKS = [
@@ -31,8 +26,8 @@ export default function HeroSection() {
         ))}
       </FadeIn>
 
-      {/* Anchored to the portrait's top edge; see .hero-heading-anchor */}
-      <div className="hero-heading-anchor absolute inset-x-0 z-20 overflow-hidden pointer-events-none">
+      {/* Anchored so the letters sit on the top of the portrait's head; see .hero-heading-anchor */}
+      <div className="hero-heading-anchor absolute inset-x-0 overflow-hidden">
         <FadeIn
           as="h1"
           delay={0.15}
@@ -68,14 +63,12 @@ export default function HeroSection() {
             inactiveTransition="transform 0.6s ease-in-out"
           >
             <img
-              src={heroPortrait}
+              src={gradPic}
               alt={`${site.fullName} portrait`}
               className="w-full h-auto select-none pointer-events-none"
               style={{
-                maskImage: PORTRAIT_MASK,
-                WebkitMaskImage: PORTRAIT_MASK,
-                maskComposite: "intersect",
-                WebkitMaskComposite: "source-in",
+                maskImage: "linear-gradient(to bottom, black 55%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 55%, transparent 100%)",
               }}
               draggable={false}
             />

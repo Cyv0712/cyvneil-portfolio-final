@@ -52,33 +52,32 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 
 /*
  * Hero heading position: the letters' baseline (0.15em above the box bottom)
- * lands 10% down the portrait (960x960), inside its faded top edge. The photo
- * has an opaque studio backdrop, so the heading sits in front of it (z-20).
- * Per breakpoint: portrait width 280/360/440/520px, heading 13.5/13.5/13.8/14vw.
- * On mobile the portrait is vertically centred; from sm up it sits on the
- * bottom. min() keeps the heading clear of the nav on short screens.
- * --hero-heading-drop lowers the letters further down the photo.
+ * lands on the top of the hair in the portrait, which starts 4.8% down the
+ * image (896x1194). Per breakpoint: portrait width 280/360/440/520px, heading
+ * 13.5/13.5/13.8/14vw. On mobile the portrait is vertically centred; from sm up
+ * it sits on the bottom. min() keeps the heading clear of the nav on short screens.
+ * --hero-heading-drop lowers the letters past that line so the head overlaps them.
  */
 .hero-heading-anchor {
-  --hero-heading-drop: 0px;
-  bottom: min(calc(50% + 112px - 2.03vw - var(--hero-heading-drop)), calc(100% - 64px - 13.5vw));
+  --hero-heading-drop: 5vw;
+  bottom: min(calc(50% + 169px - 2.03vw - var(--hero-heading-drop)), calc(100% - 64px - 13.5vw));
 }
 
 @media (min-width: 640px) {
   .hero-heading-anchor {
-    bottom: min(calc(324px - 2.03vw - var(--hero-heading-drop)), calc(100% - 70px - 13.5vw));
+    bottom: min(calc(457px - 2.03vw - var(--hero-heading-drop)), calc(100% - 70px - 13.5vw));
   }
 }
 
 @media (min-width: 768px) {
   .hero-heading-anchor {
-    bottom: min(calc(396px - 2.07vw - var(--hero-heading-drop)), calc(100% - 76px - 13.8vw));
+    bottom: min(calc(558px - 2.07vw - var(--hero-heading-drop)), calc(100% - 76px - 13.8vw));
   }
 }
 
 @media (min-width: 1024px) {
   .hero-heading-anchor {
-    bottom: min(calc(468px - 2.1vw - var(--hero-heading-drop)), calc(100% - 80px - 14vw));
+    bottom: min(calc(660px - 2.1vw - var(--hero-heading-drop)), calc(100% - 80px - 14vw));
   }
 }
 
