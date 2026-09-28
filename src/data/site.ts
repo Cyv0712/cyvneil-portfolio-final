@@ -5,7 +5,7 @@ export const site = {
   role: "Web Developer",
   tagline: "a junior full-stack developer who pairs solid engineering with AI-assisted workflows",
   about:
-    "I'm a Computer Engineering graduate from the University of San Carlos, building full-stack web apps out of Cebu City. From client storefronts to internal tools, i care about clean interfaces, dependable systems, and code that stays easy to maintain. Let's build something great together!",
+    "I'm a full-stack developer who builds web apps end to end, from polished interfaces to the APIs, databases, and deployments behind them. I pick up new technologies quickly and adapt to whatever the project needs, pairing solid engineering with AI-assisted workflows to ship fast without cutting corners. Let's build something great together!",
   location: "Cebu City, Philippines",
   country: "Philippines",
   email: "cyvenriquez1@gmail.com",
